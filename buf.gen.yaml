@@ -1,0 +1,14 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/mlfusion/fusion/private/gen/proto/go
+    except:
+      - buf.build/googleapis/googleapis
+plugins:
+  - remote: buf.build/prost/plugins/prost:v0.2.1-1
+    out: onnx-flight/src/gen
+  - remote: buf.build/prost/plugins/tonic:v0.2.1-1
+    out: onnx-flight/src/gen
+    opt:
+      - no_client=true
