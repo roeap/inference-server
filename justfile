@@ -1,5 +1,5 @@
 _default:
     just --list
 
-generate_api:
+generate-api:
     buf generate buf.build/mlfusion/inference

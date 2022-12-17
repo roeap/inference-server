@@ -1,15 +1,10 @@
 use rand::*;
 use tract_onnx::prelude::*;
 
-mod models {
-    include!("gen/inference.rs");
-    include!("gen/inference.model_repository.rs");
-}
-
 pub fn add() -> TractResult<()> {
     let model = tract_onnx::onnx()
     // load the model
-    .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/simplified.onnx")?
+    .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/example.onnx")?
     // optimize graph
     // .into_optimized()?
     // make the model runnable and fix its inputs and outputs
@@ -29,12 +24,35 @@ pub fn add() -> TractResult<()> {
     Ok(())
 }
 
+pub fn sub() -> TractResult<()> {
+    let model = tract_onnx::onnx()
+    // load the model
+    .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/rf_iris.onnx")?
+    // optimize graph
+    // .into_optimized()?
+    // make the model runnable and fix its inputs and outputs
+    .into_runnable()?;
+
+    // Generate some input data for the model
+    let mut rng = thread_rng();
+    let vals: Vec<_> = (0..300).map(|_| rng.gen::<f32>()).collect();
+    let input = tract_ndarray::arr1(&vals).into_shape((3, 100)).unwrap().into_tensor();
+
+    // Input the generated data into the model
+    let result = model.run(tvec![input.into()]).unwrap();
+    let to_show = result[0].to_array_view::<i64>()?;
+
+    println!("result: {:?}", to_show);
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn it_works() {
-        add().unwrap();
+        sub().unwrap();
     }
 }
