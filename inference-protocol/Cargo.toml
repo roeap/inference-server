@@ -9,3 +9,10 @@ edition = "2021"
 tonic = { version = "0.8", default-features = false, features = ["transport", "codegen", "prost"] }
 bytes = { version = "1", default-features = false }
 prost = { version = "0.11", default-features = false }
+
+tract-onnx = { version = "0.18.5", optional = true }
+tract-data = { version = "0.18.5", optional = true }
+
+[features]
+default = ["tract"]
+tract = ["tract-onnx", "tract-data"]

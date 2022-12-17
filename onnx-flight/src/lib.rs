@@ -36,10 +36,10 @@ pub fn sub() -> TractResult<()> {
     // Generate some input data for the model
     let mut rng = thread_rng();
     let vals: Vec<_> = (0..300).map(|_| rng.gen::<f32>()).collect();
-    let input = tract_ndarray::arr1(&vals).into_shape((3, 100)).unwrap().into_tensor();
+    let input = tract_ndarray::arr1(&vals).into_shape((3, 100))?.into_tensor();
 
     // Input the generated data into the model
-    let result = model.run(tvec![input.into()]).unwrap();
+    let result = model.run(tvec![input.into()])?;
     let to_show = result[0].to_array_view::<i64>()?;
 
     println!("result: {:?}", to_show);
