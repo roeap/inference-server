@@ -506,6 +506,7 @@ dependencies = [
  "inference-protocol",
  "prost",
  "rand",
+ "thiserror",
  "tonic",
  "tract-onnx",
 ]

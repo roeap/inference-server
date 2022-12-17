@@ -1,57 +1,65 @@
-use rand::*;
-use tract_onnx::prelude::*;
+pub mod error;
+pub mod handler;
 
-pub fn add() -> TractResult<()> {
-    let model = onnx()
-        // load the model
-        .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/example.onnx")?
-        // optimize graph
-        // .into_optimized()?
-        // make the model runnable and fix its inputs and outputs
-        .into_runnable()?;
+use inference_protocol::inference_service_server::*;
+use inference_protocol::*;
 
-    // Generate some input data for the model
-    let mut rng = thread_rng();
-    let vals: Vec<_> = (0..1000).map(|_| rng.gen::<f32>()).collect();
-    let input = tract_ndarray::arr1(&vals)
-        .into_shape((10, 100))
-        .unwrap()
-        .into_tensor();
+use tonic::{Request, Response, Status};
 
-    // Input the generated data into the model
-    let result = model.run(tvec![input.into()]).unwrap();
-    let to_show = result[0].to_array_view::<f32>()?;
+#[derive(Clone)]
+pub struct InferenceServiceImpl {}
 
-    println!("result: {:?}", to_show);
+#[tonic::async_trait]
+impl InferenceService for InferenceServiceImpl {
+    async fn server_live(
+        &self,
+        request: Request<ServerLiveRequest>,
+    ) -> std::result::Result<Response<ServerLiveResponse>, Status> {
+        let _live_request = request.into_inner();
+        todo!()
+    }
 
-    Ok(())
-}
+    async fn server_ready(
+        &self,
+        request: Request<ServerReadyRequest>,
+    ) -> std::result::Result<Response<ServerReadyResponse>, Status> {
+        let _ready_request = request.into_inner();
+        todo!()
+    }
 
-pub fn sub() -> TractResult<()> {
-    let model = onnx()
-        // load the model
-        .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/rf_iris.onnx")?
-        // optimize graph
-        // .into_optimized()?
-        // make the model runnable and fix its inputs and outputs
-        .into_runnable()?;
+    async fn model_ready(
+        &self,
+        request: Request<ModelReadyRequest>,
+    ) -> std::result::Result<Response<ModelReadyResponse>, Status> {
+        let _ready_request = request.into_inner();
+        todo!()
+    }
 
-    // Generate some input data for the model
-    let mut rng = thread_rng();
-    let vals: Vec<_> = (0..300).map(|_| rng.gen::<f32>()).collect();
-    let input = tract_ndarray::arr1(&vals)
-        .into_shape((3, 100))?
-        .into_tensor();
+    async fn server_metadata(
+        &self,
+        request: Request<ServerMetadataRequest>,
+    ) -> std::result::Result<Response<ServerMetadataResponse>, Status> {
+        let _meta_request = request.into_inner();
+        todo!()
+    }
 
-    // Input the generated data into the model
-    let result = model.run(tvec![input.into()])?;
-    let to_show = result[0].to_array_view::<i64>()?;
+    async fn model_metadata(
+        &self,
+        request: Request<ModelMetadataRequest>,
+    ) -> std::result::Result<Response<ModelMetadataResponse>, Status> {
+        let _meta_request = request.into_inner();
+        todo!()
+    }
 
-    println!("result: {:?}", to_show);
-
-    Ok(())
+    async fn model_infer(
+        &self,
+        request: Request<ModelInferRequest>,
+    ) -> std::result::Result<Response<ModelInferResponse>, Status> {
+        let _infer_request = request.into_inner();
+        todo!()
+    }
 }
 
 fn main() {
-    sub().unwrap();
+    todo!();
 }
