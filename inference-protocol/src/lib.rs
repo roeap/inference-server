@@ -24,3 +24,37 @@ pub mod inference_service_client {
     use super::gen;
     pub use gen::grpc_inference_service_client::GrpcInferenceServiceClient as InferenceServiceClient;
 }
+
+// model repository
+pub use gen::RepositoryIndexRequest;
+pub use gen::RepositoryIndexResponse;
+pub use gen::repository_index_response::ModelIndex;
+pub use gen::RepositoryModelLoadRequest;
+pub use gen::RepositoryModelLoadResponse;
+pub use gen::RepositoryModelUnloadRequest;
+pub use gen::RepositoryModelUnloadResponse;
+
+// model inference - status
+pub use gen::ServerLiveRequest;
+pub use gen::ServerLiveResponse;
+pub use gen::ServerReadyRequest;
+pub use gen::ServerReadyResponse;
+pub use gen::ModelReadyRequest;
+pub use gen::ModelReadyResponse;
+
+// model inference - metadata
+pub use gen::ServerMetadataRequest;
+pub use gen::ServerMetadataResponse;
+pub use gen::ModelMetadataRequest;
+pub use gen::ModelMetadataResponse;
+pub use gen::model_metadata_response::TensorMetadata;
+
+// model inference - inference
+pub use gen::ModelInferRequest;
+pub use gen::ModelInferResponse;
+pub use gen::InferParameter;
+pub use gen::infer_parameter::ParameterChoice;
+pub use gen::model_infer_request::InferInputTensor;
+pub use gen::model_infer_request::InferRequestedOutputTensor;
+pub use gen::InferTensorContents;
+pub use gen::model_infer_response::InferOutputTensor;
