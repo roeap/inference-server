@@ -1,2 +1,2 @@
 [workspace]
-members = ["onnx-flight", "inference-protocol"]
+members = ["onnx-flight", "inference-protocol", "inference-server"]
