@@ -1,77 +1,35 @@
 pub mod error;
 pub mod handler;
+pub mod inference;
+pub mod repository;
 
-use crate::handler::{InferenceHandler, OnnxInferenceHandler};
-
-use inference_protocol::inference_service_server::{InferenceService, InferenceServiceServer};
-use inference_protocol::*;
+use inference::InferenceServiceImpl;
+use inference_protocol::inference_service_server::InferenceServiceServer;
+use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
+use repository::ModelRepositoryServiceImpl;
 use tonic::transport::Server;
-use tonic::{Request, Response, Status};
 use tracing::info;
-
-#[derive(Clone)]
-pub struct InferenceServiceImpl {}
-
-#[tonic::async_trait]
-impl InferenceService for InferenceServiceImpl {
-    async fn server_live(
-        &self,
-        request: Request<ServerLiveRequest>,
-    ) -> std::result::Result<Response<ServerLiveResponse>, Status> {
-        let _live_request = request.into_inner();
-        todo!()
-    }
-
-    async fn server_ready(
-        &self,
-        request: Request<ServerReadyRequest>,
-    ) -> std::result::Result<Response<ServerReadyResponse>, Status> {
-        let _ready_request = request.into_inner();
-        todo!()
-    }
-
-    async fn model_ready(
-        &self,
-        request: Request<ModelReadyRequest>,
-    ) -> std::result::Result<Response<ModelReadyResponse>, Status> {
-        let _ready_request = request.into_inner();
-        todo!()
-    }
-
-    async fn server_metadata(
-        &self,
-        request: Request<ServerMetadataRequest>,
-    ) -> std::result::Result<Response<ServerMetadataResponse>, Status> {
-        let _meta_request = request.into_inner();
-        todo!()
-    }
-
-    async fn model_metadata(
-        &self,
-        request: Request<ModelMetadataRequest>,
-    ) -> std::result::Result<Response<ModelMetadataResponse>, Status> {
-        let _meta_request = request.into_inner();
-        todo!()
-    }
-
-    async fn model_infer(
-        &self,
-        request: Request<ModelInferRequest>,
-    ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let handler = OnnxInferenceHandler {};
-        let result = handler.predict(request.into_inner()).await.unwrap();
-        Ok(Response::new(result))
-    }
-}
+use tracing_subscriber::{self, layer::SubscriberExt, prelude::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let svc = InferenceServiceServer::new(InferenceServiceImpl {});
+    let stdout_log = tracing_subscriber::fmt::layer().pretty();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(format!(
+            "{},h2=off,sqlparser=off,datafusion_optimizer=off,datafusion::physical_plan::planner=off",
+            "debug"
+        )))
+        .with(stdout_log)
+        .try_init()?;
+
+    let infer_svc = InferenceServiceServer::new(InferenceServiceImpl {});
+    let repo_svc = ModelRepositoryServiceServer::new(ModelRepositoryServiceImpl {});
 
     info!("Listening on 0.0.0.0:50051");
 
     Server::builder()
-        .add_service(svc)
+        .add_service(infer_svc)
+        .add_service(repo_svc)
         .serve("0.0.0.0:50051".parse()?)
         .await?;
 
