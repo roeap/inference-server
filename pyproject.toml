@@ -12,20 +12,19 @@ python = ">=3.10,<3.11"
 # workspace dependencies
 inference-client = { path = "python/inference-client", develop = true }
 
-# pypi dependenceis
-scikit-learn = "^1.1"
-pyarrow = "^10.0.1"
-onnxruntime = "^1.13.1"
-skl2onnx = "^1.13"
-
 [tool.poetry.group.examples.dependencies]
+hummingbird-ml = "^0.4.7"
 lightgbm = "^3.3.3"
+llvmlite = "^0.39"
+mlflow = "^2"
+numba = "^0.56"
 numpy = "^1.23.5"
 onnx-simplifier = "^0.4.10"
 onnxmltools = "^1.11.1"
+onnxruntime = "^1.13.1"
 pandas = "^1.5.2"
+scikit-learn = "^1.1"
 torch = "^1.13.1"
-hummingbird-ml = "^0.4.7"
 
 [tool.poetry.group.dev.dependencies]
 black = { extras = ["jupyter"], version = "^22.12.0" }

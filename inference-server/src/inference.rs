@@ -11,18 +11,16 @@ pub struct InferenceServiceImpl {}
 impl InferenceService for InferenceServiceImpl {
     async fn server_live(
         &self,
-        request: Request<ServerLiveRequest>,
+        _request: Request<ServerLiveRequest>,
     ) -> std::result::Result<Response<ServerLiveResponse>, Status> {
-        let _live_request = request.into_inner();
-        todo!()
+        Ok(Response::new(ServerLiveResponse { live: true }))
     }
 
     async fn server_ready(
         &self,
-        request: Request<ServerReadyRequest>,
+        _request: Request<ServerReadyRequest>,
     ) -> std::result::Result<Response<ServerReadyResponse>, Status> {
-        let _ready_request = request.into_inner();
-        todo!()
+        Ok(Response::new(ServerReadyResponse { ready: true }))
     }
 
     async fn model_ready(
@@ -35,10 +33,13 @@ impl InferenceService for InferenceServiceImpl {
 
     async fn server_metadata(
         &self,
-        request: Request<ServerMetadataRequest>,
+        _request: Request<ServerMetadataRequest>,
     ) -> std::result::Result<Response<ServerMetadataResponse>, Status> {
-        let _meta_request = request.into_inner();
-        todo!()
+        Ok(Response::new(ServerMetadataResponse {
+            name: "inference-server-rs".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
+            ..Default::default()
+        }))
     }
 
     async fn model_metadata(

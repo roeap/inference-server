@@ -6,6 +6,10 @@
     "**/bower_components": true,
     "**/.venv": true
   },
+  "[markdown]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true
+  },
   "python.formatting.provider": "none",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
