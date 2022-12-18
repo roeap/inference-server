@@ -3,11 +3,18 @@ use inference_protocol::*;
 use tract_onnx::prelude::*;
 
 #[tonic::async_trait]
-pub trait InferenceHandler {
+pub trait InferenceHandler: std::fmt::Display + Send + Sync + std::fmt::Debug + 'static {
     async fn infer(request: ModelInferRequest) -> Result<ModelInferResponse>;
 }
 
+#[derive(Debug)]
 pub struct OnnxInferenceHandler {}
+
+impl std::fmt::Display for OnnxInferenceHandler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "OnnxInferenceHandler()")
+    }
+}
 
 #[tonic::async_trait]
 impl InferenceHandler for OnnxInferenceHandler {

@@ -3,6 +3,7 @@ _default:
 
 install:
     poetry install
+    pre-commit install
 
 # generate V2 inference API types
 generate-api:
