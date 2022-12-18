@@ -2,5 +2,9 @@
 
 Playground for an experimental inference server based on [V2 inference protocol][v2] and the [onnx][onnx].
 
+```sh
+just install
+```
+
 [v2]: https://kserve.github.io/website/modelserving/inference_api/#grpc
 [onnx]: https://onnx.ai/
