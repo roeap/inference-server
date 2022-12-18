@@ -2,6 +2,7 @@
 # sources: inference/model_repository.proto
 # plugin: python-betterproto
 from dataclasses import dataclass
+from typing import Dict, List
 
 import betterproto
 import grpclib
@@ -20,7 +21,7 @@ class RepositoryIndexRequest(betterproto.Message):
 @dataclass(eq=False, repr=False)
 class RepositoryIndexResponse(betterproto.Message):
     # An index entry for each model.
-    models: list["RepositoryIndexResponseModelIndex"] = betterproto.message_field(1)
+    models: List["RepositoryIndexResponseModelIndex"] = betterproto.message_field(1)
 
 
 @dataclass(eq=False, repr=False)
@@ -66,7 +67,9 @@ class RepositoryModelUnloadResponse(betterproto.Message):
 
 
 class ModelRepositoryServiceStub(betterproto.ServiceStub):
-    async def repository_index(self, *, repository_name: str = "", ready: bool = False) -> "RepositoryIndexResponse":
+    async def repository_index(
+        self, *, repository_name: str = "", ready: bool = False
+    ) -> "RepositoryIndexResponse":
 
         request = RepositoryIndexRequest()
         request.repository_name = repository_name
@@ -111,10 +114,14 @@ class ModelRepositoryServiceBase(ServiceBase):
     async def repository_index(self, repository_name: str, ready: bool) -> "RepositoryIndexResponse":
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
 
-    async def repository_model_load(self, repository_name: str, model_name: str) -> "RepositoryModelLoadResponse":
+    async def repository_model_load(
+        self, repository_name: str, model_name: str
+    ) -> "RepositoryModelLoadResponse":
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
 
-    async def repository_model_unload(self, repository_name: str, model_name: str) -> "RepositoryModelUnloadResponse":
+    async def repository_model_unload(
+        self, repository_name: str, model_name: str
+    ) -> "RepositoryModelUnloadResponse":
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
 
     async def __rpc_repository_index(self, stream: grpclib.server.Stream) -> None:
@@ -150,7 +157,7 @@ class ModelRepositoryServiceBase(ServiceBase):
         response = await self.repository_model_unload(**request_kwargs)
         await stream.send_message(response)
 
-    def __mapping__(self) -> dict[str, grpclib.const.Handler]:
+    def __mapping__(self) -> Dict[str, grpclib.const.Handler]:
         return {
             "/inference.model_repository.ModelRepositoryService/RepositoryIndex": grpclib.const.Handler(
                 self.__rpc_repository_index,

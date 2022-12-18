@@ -58,9 +58,8 @@ impl InferenceService for InferenceServiceImpl {
         &self,
         request: Request<ModelInferRequest>,
     ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let infer_request = request.into_inner();
-        let inf_handler = OnnxInferenceHandler {};
-        let result = inf_handler.predict(infer_request).await.unwrap();
+        let handler = OnnxInferenceHandler {};
+        let result = handler.predict(request.into_inner()).await.unwrap();
         Ok(Response::new(result))
     }
 }

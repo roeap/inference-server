@@ -3,8 +3,10 @@ _default:
 
 install:
     poetry install
-    pre-commit install
+    poetry run pre-commit install
 
 # generate V2 inference API types
 generate:
     buf generate buf.build/mlfusion/inference
+    poetry run black python/
+    poetry run ruff --fix python/

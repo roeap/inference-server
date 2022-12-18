@@ -2,7 +2,7 @@
 # sources: inference/dataplane.proto
 # plugin: python-betterproto
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, List, Optional
 
 import betterproto
 import grpclib
@@ -66,7 +66,7 @@ class ServerMetadataResponse(betterproto.Message):
     # The server version.
     version: str = betterproto.string_field(2)
     # The extensions supported by the server.
-    extensions: list[str] = betterproto.string_field(3)
+    extensions: List[str] = betterproto.string_field(3)
 
 
 @dataclass(eq=False, repr=False)
@@ -85,16 +85,16 @@ class ModelMetadataResponse(betterproto.Message):
     # The model name.
     name: str = betterproto.string_field(1)
     # The versions of the model available on the server.
-    versions: list[str] = betterproto.string_field(2)
+    versions: List[str] = betterproto.string_field(2)
     # The model's platform. See Platforms.
     platform: str = betterproto.string_field(3)
     # The model's inputs.
-    inputs: list["ModelMetadataResponseTensorMetadata"] = betterproto.message_field(4)
+    inputs: List["ModelMetadataResponseTensorMetadata"] = betterproto.message_field(4)
     # The model's outputs.
-    outputs: list["ModelMetadataResponseTensorMetadata"] = betterproto.message_field(5)
+    outputs: List["ModelMetadataResponseTensorMetadata"] = betterproto.message_field(5)
     # Optional default parameters for the request / response. NOTE: This is an
     # extension to the standard
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         6, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
 
@@ -108,10 +108,10 @@ class ModelMetadataResponseTensorMetadata(betterproto.Message):
     # The tensor data type.
     datatype: str = betterproto.string_field(2)
     # The tensor shape. A variable-size dimension is represented by a -1 value.
-    shape: list[int] = betterproto.int64_field(3)
+    shape: List[int] = betterproto.int64_field(3)
     # Optional default parameters for input. NOTE: This is an extension to the
     # standard
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         4, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
 
@@ -129,14 +129,14 @@ class ModelInferRequest(betterproto.Message):
     # response.
     id: str = betterproto.string_field(3)
     # Optional inference parameters.
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         4, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
     # The input tensors for the inference.
-    inputs: list["ModelInferRequestInferInputTensor"] = betterproto.message_field(5)
+    inputs: List["ModelInferRequestInferInputTensor"] = betterproto.message_field(5)
     # The requested output tensors for the inference. Optional, if not specified
     # all outputs produced by the model will be returned.
-    outputs: list["ModelInferRequestInferRequestedOutputTensor"] = betterproto.message_field(6)
+    outputs: List["ModelInferRequestInferRequestedOutputTensor"] = betterproto.message_field(6)
 
 
 @dataclass(eq=False, repr=False)
@@ -148,9 +148,9 @@ class ModelInferRequestInferInputTensor(betterproto.Message):
     # The tensor data type.
     datatype: str = betterproto.string_field(2)
     # The tensor shape.
-    shape: list[int] = betterproto.int64_field(3)
+    shape: List[int] = betterproto.int64_field(3)
     # Optional inference input tensor parameters.
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         4, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
     # The input tensor data.
@@ -164,7 +164,7 @@ class ModelInferRequestInferRequestedOutputTensor(betterproto.Message):
     # The tensor name.
     name: str = betterproto.string_field(1)
     # Optional requested output tensor parameters.
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         2, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
 
@@ -178,11 +178,11 @@ class ModelInferResponse(betterproto.Message):
     # The id of the inference request if one was specified.
     id: str = betterproto.string_field(3)
     # Optional inference response parameters.
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         4, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
     # The output tensors holding inference results.
-    outputs: list["ModelInferResponseInferOutputTensor"] = betterproto.message_field(5)
+    outputs: List["ModelInferResponseInferOutputTensor"] = betterproto.message_field(5)
 
 
 @dataclass(eq=False, repr=False)
@@ -194,9 +194,9 @@ class ModelInferResponseInferOutputTensor(betterproto.Message):
     # The tensor data type.
     datatype: str = betterproto.string_field(2)
     # The tensor shape.
-    shape: list[int] = betterproto.int64_field(3)
+    shape: List[int] = betterproto.int64_field(3)
     # Optional output tensor parameters.
-    parameters: dict[str, "InferParameter"] = betterproto.map_field(
+    parameters: Dict[str, "InferParameter"] = betterproto.map_field(
         4, betterproto.TYPE_STRING, betterproto.TYPE_MESSAGE
     )
     # The output tensor data.
@@ -227,35 +227,35 @@ class InferTensorContents(betterproto.Message):
     # Representation for BOOL data type. The size must match what is expected by
     # the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    bool_contents: list[bool] = betterproto.bool_field(1)
+    bool_contents: List[bool] = betterproto.bool_field(1)
     # Representation for INT8, INT16, and INT32 data types. The size must match
     # what is expected by the tensor's shape. The contents must be the flattened,
     # one-dimensional, row-major order of the tensor elements.
-    int_contents: list[int] = betterproto.int32_field(2)
+    int_contents: List[int] = betterproto.int32_field(2)
     # Representation for INT64 data types. The size must match what is expected
     # by the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    int64_contents: list[int] = betterproto.int64_field(3)
+    int64_contents: List[int] = betterproto.int64_field(3)
     # Representation for UINT8, UINT16, and UINT32 data types. The size must
     # match what is expected by the tensor's shape. The contents must be the
     # flattened, one-dimensional, row-major order of the tensor elements.
-    uint_contents: list[int] = betterproto.uint32_field(4)
+    uint_contents: List[int] = betterproto.uint32_field(4)
     # Representation for UINT64 data types. The size must match what is expected
     # by the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    uint64_contents: list[int] = betterproto.uint64_field(5)
+    uint64_contents: List[int] = betterproto.uint64_field(5)
     # Representation for FP32 data type. The size must match what is expected by
     # the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    fp32_contents: list[float] = betterproto.float_field(6)
+    fp32_contents: List[float] = betterproto.float_field(6)
     # Representation for FP64 data type. The size must match what is expected by
     # the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    fp64_contents: list[float] = betterproto.double_field(7)
+    fp64_contents: List[float] = betterproto.double_field(7)
     # Representation for BYTES data type. The size must match what is expected by
     # the tensor's shape. The contents must be the flattened, one-dimensional,
     # row-major order of the tensor elements.
-    bytes_contents: list[bytes] = betterproto.bytes_field(8)
+    bytes_contents: List[bytes] = betterproto.bytes_field(8)
 
 
 class GrpcInferenceServiceStub(betterproto.ServiceStub):
@@ -263,13 +263,17 @@ class GrpcInferenceServiceStub(betterproto.ServiceStub):
 
         request = ServerLiveRequest()
 
-        return await self._unary_unary("/inference.GRPCInferenceService/ServerLive", request, ServerLiveResponse)
+        return await self._unary_unary(
+            "/inference.GRPCInferenceService/ServerLive", request, ServerLiveResponse
+        )
 
     async def server_ready(self) -> "ServerReadyResponse":
 
         request = ServerReadyRequest()
 
-        return await self._unary_unary("/inference.GRPCInferenceService/ServerReady", request, ServerReadyResponse)
+        return await self._unary_unary(
+            "/inference.GRPCInferenceService/ServerReady", request, ServerReadyResponse
+        )
 
     async def model_ready(self, *, name: str = "", version: str = "") -> "ModelReadyResponse":
 
@@ -277,7 +281,9 @@ class GrpcInferenceServiceStub(betterproto.ServiceStub):
         request.name = name
         request.version = version
 
-        return await self._unary_unary("/inference.GRPCInferenceService/ModelReady", request, ModelReadyResponse)
+        return await self._unary_unary(
+            "/inference.GRPCInferenceService/ModelReady", request, ModelReadyResponse
+        )
 
     async def server_metadata(self) -> "ServerMetadataResponse":
 
@@ -307,9 +313,9 @@ class GrpcInferenceServiceStub(betterproto.ServiceStub):
         model_name: str = "",
         model_version: str = "",
         id: str = "",
-        parameters: dict[str, "InferParameter"] = None,
-        inputs: Optional[list["ModelInferRequestInferInputTensor"]] = None,
-        outputs: Optional[list["ModelInferRequestInferRequestedOutputTensor"]] = None,
+        parameters: Dict[str, "InferParameter"] = None,
+        inputs: Optional[List["ModelInferRequestInferInputTensor"]] = None,
+        outputs: Optional[List["ModelInferRequestInferRequestedOutputTensor"]] = None,
     ) -> "ModelInferResponse":
         inputs = inputs or []
         outputs = outputs or []
@@ -324,7 +330,9 @@ class GrpcInferenceServiceStub(betterproto.ServiceStub):
         if outputs is not None:
             request.outputs = outputs
 
-        return await self._unary_unary("/inference.GRPCInferenceService/ModelInfer", request, ModelInferResponse)
+        return await self._unary_unary(
+            "/inference.GRPCInferenceService/ModelInfer", request, ModelInferResponse
+        )
 
 
 class GrpcInferenceServiceBase(ServiceBase):
@@ -348,9 +356,9 @@ class GrpcInferenceServiceBase(ServiceBase):
         model_name: str,
         model_version: str,
         id: str,
-        parameters: dict[str, "InferParameter"],
-        inputs: Optional[list["ModelInferRequestInferInputTensor"]],
-        outputs: Optional[list["ModelInferRequestInferRequestedOutputTensor"]],
+        parameters: Dict[str, "InferParameter"],
+        inputs: Optional[List["ModelInferRequestInferInputTensor"]],
+        outputs: Optional[List["ModelInferRequestInferRequestedOutputTensor"]],
     ) -> "ModelInferResponse":
         raise grpclib.GRPCError(grpclib.const.Status.UNIMPLEMENTED)
 
@@ -415,7 +423,7 @@ class GrpcInferenceServiceBase(ServiceBase):
         response = await self.model_infer(**request_kwargs)
         await stream.send_message(response)
 
-    def __mapping__(self) -> dict[str, grpclib.const.Handler]:
+    def __mapping__(self) -> Dict[str, grpclib.const.Handler]:
         return {
             "/inference.GRPCInferenceService/ServerLive": grpclib.const.Handler(
                 self.__rpc_server_live,

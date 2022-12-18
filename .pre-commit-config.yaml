@@ -4,7 +4,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
-      - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
 
@@ -31,14 +30,14 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-      - id: pyupgrade
-        exclude: setup.py
-        entry: pyupgrade --py39-plus
-        types:
-          - python
+  # - repo: https://github.com/asottile/pyupgrade
+  #   rev: v3.3.1
+  #   hooks:
+  #     - id: pyupgrade
+  #       exclude: setup.py
+  #       entry: pyupgrade --py39-plus
+  #       types:
+  #         - python
 
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.284

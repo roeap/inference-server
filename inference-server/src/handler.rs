@@ -1,5 +1,7 @@
 use crate::error::Result;
-use inference_protocol::{ModelInferRequest, ModelInferResponse};
+use inference_protocol::{
+    InferOutputTensor, InferTensorContents, ModelInferRequest, ModelInferResponse,
+};
 use tract_onnx::prelude::*;
 
 #[tonic::async_trait]
@@ -32,9 +34,23 @@ impl InferenceHandler for OnnxInferenceHandler {
         // Input the generated data into the model
         let result = model.run(request.try_into()?)?;
         let to_show = result[0].to_array_view::<f32>()?;
+        let data = to_show.as_slice().unwrap().to_vec();
 
-        println!("result: {:?}", to_show);
+        let response = ModelInferResponse {
+            model_name: "model_name".into(),
+            outputs: vec![InferOutputTensor {
+                name: "output".into(),
+                datatype: "F32".into(),
+                shape: vec![1, 13],
+                contents: Some(InferTensorContents {
+                    fp32_contents: data,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
 
-        todo!()
+        Ok(response)
     }
 }
