@@ -6,5 +6,5 @@ install:
     pre-commit install
 
 # generate V2 inference API types
-generate-api:
+generate:
     buf generate buf.build/mlfusion/inference

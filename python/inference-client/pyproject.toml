@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "inference-client"
+version = "0.1.0"
+description = "Model inference client"
+authors = ["Robert Pack <robstar.pack@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+betterproto = "2.0.0b5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
