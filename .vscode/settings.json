@@ -1,6 +1,11 @@
 {
   "black-formatter.args": ["--config", "pyproject.toml"],
   "editor.formatOnSave": true,
+  "explorer.autoRevealExclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/.venv": true
+  },
   "python.formatting.provider": "none",
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
