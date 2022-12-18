@@ -1,10 +1,13 @@
 pub mod error;
 pub mod handler;
 
-use inference_protocol::inference_service_server::*;
-use inference_protocol::*;
+use crate::handler::{InferenceHandler, OnnxInferenceHandler};
 
+use inference_protocol::inference_service_server::{InferenceService, InferenceServiceServer};
+use inference_protocol::*;
+use tonic::transport::Server;
 use tonic::{Request, Response, Status};
+use tracing::info;
 
 #[derive(Clone)]
 pub struct InferenceServiceImpl {}
@@ -55,30 +58,23 @@ impl InferenceService for InferenceServiceImpl {
         &self,
         request: Request<ModelInferRequest>,
     ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let _infer_request = request.into_inner();
-        todo!()
+        let infer_request = request.into_inner();
+        let inf_handler = OnnxInferenceHandler {};
+        let result = inf_handler.predict(infer_request).await.unwrap();
+        Ok(Response::new(result))
     }
 }
 
-fn main() {
-    use tract_onnx::prelude::*;
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let svc = InferenceServiceServer::new(InferenceServiceImpl {});
 
-    let model = onnx()
-        .model_for_path("inference-server/tests/data/model.onnx")
-        .unwrap()
-        .into_runnable()
-        .unwrap();
+    info!("Listening on 0.0.0.0:50051");
 
-    let data: Vec<f32> = vec![
-        1.8, 2.8, 3.8, 1.1, 1.2, 1.3, 1.8, 2.8, 3.8, 1.1, 1.2, 1.3, 1.8,
-    ];
-    let inputs = tract_ndarray::arr1(&data)
-        .into_shape((1, 13))
-        .unwrap()
-        .into_tensor();
-    let result = model.run(tvec![inputs]).unwrap();
+    Server::builder()
+        .add_service(svc)
+        .serve("0.0.0.0:50051".parse()?)
+        .await?;
 
-    let to_show = result[0].to_array_view::<f32>().unwrap();
-
-    println!("result: {:?}", to_show);
+    Ok(())
 }

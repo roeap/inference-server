@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Generic, TypeVar
 
-from betterproto import ServiceStub  # type: ignore
+from betterproto import ServiceStub
 from grpclib.client import Channel
 from grpclib.events import SendRequest, listen
 
@@ -72,7 +72,9 @@ class AsyncModelRepositoryClient(_BaseGrpcClient[ModelRepositoryServiceStub]):
         """
         super().__init__(stub_type=ModelRepositoryServiceStub, host=host, port=port, use_ssl=use_ssl)
 
-    async def repository_index(self, *, repository_name: str = "", ready: bool = False) -> RepositoryIndexResponse:
+    async def repository_index(
+        self, *, repository_name: str = "", ready: bool = False
+    ) -> RepositoryIndexResponse:
         async with self._service() as service:
             return await service.repository_index(repository_name=repository_name, ready=ready)
 

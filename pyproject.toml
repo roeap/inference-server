@@ -39,7 +39,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 color = true
-line-length = 120
+line-length = 112
 target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 
@@ -60,7 +60,7 @@ exclude = [
   '*.pyi',
 ]
 ignore = ['E501']
-line-length = 120
+line-length = 112
 select = ['B', 'C', 'E', 'F', "I", "S", 'W']
 
 [tool.ruff.per-file-ignores]
@@ -73,6 +73,8 @@ known-first-party = ["inference_client"]
 
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true
+reportPrivateImportUsage = false
+reportShadowedImports = false
 venvPath = "."
 venv = ".venv"
 exclude = [

@@ -4,7 +4,7 @@ use tract_onnx::prelude::*;
 
 #[tonic::async_trait]
 pub trait InferenceHandler: std::fmt::Display + Send + Sync + std::fmt::Debug + 'static {
-    async fn infer(request: ModelInferRequest) -> Result<ModelInferResponse>;
+    async fn predict(&self, request: ModelInferRequest) -> Result<ModelInferResponse>;
 }
 
 #[derive(Debug)]
@@ -24,14 +24,14 @@ impl OnnxInferenceHandler {
 
 #[tonic::async_trait]
 impl InferenceHandler for OnnxInferenceHandler {
-    async fn infer(request: ModelInferRequest) -> Result<ModelInferResponse> {
+    async fn predict(&self, request: ModelInferRequest) -> Result<ModelInferResponse> {
         let model = onnx()
             .model_for_path("inference-server/tests/data/model.onnx")?
             .into_runnable()?;
 
         // Input the generated data into the model
         let result = model.run(request.try_into()?)?;
-        let to_show = result[0].to_array_view::<i64>()?;
+        let to_show = result[0].to_array_view::<f32>()?;
 
         println!("result: {:?}", to_show);
 
