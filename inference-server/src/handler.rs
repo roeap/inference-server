@@ -1,5 +1,5 @@
-use crate::error::*;
-use inference_protocol::*;
+use crate::error::Result;
+use inference_protocol::{ModelInferRequest, ModelInferResponse};
 use tract_onnx::prelude::*;
 
 #[tonic::async_trait]
@@ -13,6 +13,12 @@ pub struct OnnxInferenceHandler {}
 impl std::fmt::Display for OnnxInferenceHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "OnnxInferenceHandler()")
+    }
+}
+
+impl OnnxInferenceHandler {
+    pub async fn try_new() -> Result<Self> {
+        Ok(Self {})
     }
 }
 

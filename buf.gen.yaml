@@ -6,3 +6,5 @@ plugins:
     out: inference-protocol/src/gen
   - remote: buf.build/prost/plugins/tonic:v0.2.1-1
     out: inference-protocol/src/gen
+  - remote: buf.build/prost/plugins/serde:v0.2.1-1
+    out: inference-protocol/src/gen

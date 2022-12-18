@@ -61,4 +61,5 @@ pub struct RepositoryModelUnloadRequest {
 pub struct RepositoryModelUnloadResponse {
 }
 include!("inference.model_repository.tonic.rs");
+include!("inference.model_repository.serde.rs");
 // @@protoc_insertion_point(module)

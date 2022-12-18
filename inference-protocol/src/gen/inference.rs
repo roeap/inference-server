@@ -294,4 +294,5 @@ pub struct InferTensorContents {
     pub bytes_contents: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
 include!("inference.tonic.rs");
+include!("inference.serde.rs");
 // @@protoc_insertion_point(module)
