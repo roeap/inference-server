@@ -61,5 +61,24 @@ impl InferenceService for InferenceServiceImpl {
 }
 
 fn main() {
-    todo!();
+    use tract_onnx::prelude::*;
+
+    let model = onnx()
+        .model_for_path("inference-server/tests/data/model.onnx")
+        .unwrap()
+        .into_runnable()
+        .unwrap();
+
+    let data: Vec<f32> = vec![
+        1.8, 2.8, 3.8, 1.1, 1.2, 1.3, 1.8, 2.8, 3.8, 1.1, 1.2, 1.3, 1.8,
+    ];
+    let inputs = tract_ndarray::arr1(&data)
+        .into_shape((1, 13))
+        .unwrap()
+        .into_tensor();
+    let result = model.run(tvec![inputs]).unwrap();
+
+    let to_show = result[0].to_array_view::<f32>().unwrap();
+
+    println!("result: {:?}", to_show);
 }

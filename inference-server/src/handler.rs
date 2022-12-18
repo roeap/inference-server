@@ -26,7 +26,7 @@ impl OnnxInferenceHandler {
 impl InferenceHandler for OnnxInferenceHandler {
     async fn infer(request: ModelInferRequest) -> Result<ModelInferResponse> {
         let model = onnx()
-            .model_for_path("/home/robstar/github/datafusion-onnx/notebooks/rf_iris.onnx")?
+            .model_for_path("inference-server/tests/data/model.onnx")?
             .into_runnable()?;
 
         // Input the generated data into the model

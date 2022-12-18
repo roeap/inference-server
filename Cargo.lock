@@ -494,6 +494,7 @@ dependencies = [
  "bytes",
  "pbjson",
  "prost",
+ "serde",
  "tonic",
  "tract-data",
  "tract-onnx",
