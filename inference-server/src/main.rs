@@ -38,12 +38,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let store = Arc::new(LocalFileSystem::new_with_prefix(
         "inference-server/tests/data",
     )?);
-
+    let repository = StorageRepository::try_new(store).await?;
     let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();
-    repositories.insert(
-        "default".to_string(),
-        Arc::new(StorageRepository::new(store)),
-    );
+    repositories.insert("default".to_string(), Arc::new(repository));
 
     let (infer_svc, repo_svc) =
         ModelService::new(Some(Arc::new(repositories)), None).into_services();

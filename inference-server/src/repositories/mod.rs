@@ -1,12 +1,16 @@
 //! Model repository implementations
+use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::error::ModelServerResult;
+use crate::error::{Error, ModelServerResult};
 use crate::models::{InferenceHandler, OnnxInferenceHandler};
 
 use futures::stream::{iter, BoxStream};
 use futures::StreamExt;
+use inference_protocol::mlflow::{ModelVersion, RegisteredModel};
 use object_store::{path::Path, DynObjectStore};
+use serde::{Deserialize, Serialize};
+use tracing::info;
 
 /// A reference to a model within a repository
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Hash, Default)]
@@ -26,13 +30,19 @@ pub trait RepositoryHandler: std::fmt::Display + Send + Sync + std::fmt::Debug +
     /// Find models based on name
     async fn find(&self, name: &String) -> BoxStream<'_, ModelServerResult<ModelReference>>;
 
+    /// Load meta data for all model versions into memory
+    async fn load(&self, name: &String) -> ModelServerResult<()>;
+
+    /// Check wether model with given name is defined / available in the repository
+    async fn contains_model(&self, name: &String) -> bool;
+
     /// Get the infernece handler for the specified model
     ///
     /// If no version is supplied, the choice of version is implementaion specific.
     async fn get(
         &self,
-        name: String,
-        version: String,
+        name: &String,
+        version: &String,
     ) -> ModelServerResult<Arc<dyn InferenceHandler>>;
 }
 
@@ -40,6 +50,7 @@ pub trait RepositoryHandler: std::fmt::Display + Send + Sync + std::fmt::Debug +
 #[derive(Debug, Clone)]
 pub struct StorageRepository {
     store: Arc<DynObjectStore>,
+    models: Arc<HashMap<String, HashMap<String, ModelVersion>>>,
 }
 
 impl std::fmt::Display for StorageRepository {
@@ -50,8 +61,28 @@ impl std::fmt::Display for StorageRepository {
 
 impl StorageRepository {
     /// Crete a new [`StorageRepository`] instance
-    pub fn new(store: Arc<DynObjectStore>) -> Self {
-        Self { store }
+    pub async fn try_new(store: Arc<DynObjectStore>) -> ModelServerResult<Self> {
+        let repo_path = Path::from("repo.yaml");
+        let data = store.get(&repo_path).await?.bytes().await?;
+        let info = serde_yaml::from_slice::<CatalogInfo>(&data)?;
+        let mut models = HashMap::new();
+        for model in info.models {
+            let mut versions = HashMap::new();
+            for version in model.latest_versions {
+                versions.insert(version.version.clone().unwrap_or_default(), version);
+            }
+            let model_name = model.name.unwrap_or_default();
+            info!(
+                "Found {} version(s) for model '{}'.",
+                versions.len(),
+                model_name
+            );
+            models.insert(model_name, versions);
+        }
+        Ok(Self {
+            store,
+            models: Arc::new(models),
+        })
     }
 }
 
@@ -75,17 +106,37 @@ impl RepositoryHandler for StorageRepository {
         todo!()
     }
 
+    async fn load(&self, name: &String) -> ModelServerResult<()> {
+        if self.models.contains_key(name) {
+            Ok(())
+        } else {
+            Err(Error::ModelNotFound(name.clone()))
+        }
+    }
+
+    async fn contains_model(&self, name: &String) -> bool {
+        self.models.contains_key(name)
+    }
+
+    #[tracing::instrument(skip(self), level = "debug")]
     async fn get(
         &self,
-        _name: String,
-        _version: String,
+        name: &String,
+        version: &String,
     ) -> ModelServerResult<Arc<dyn InferenceHandler>> {
-        let data = self
-            .store
-            .get(&Path::from("model.onnx"))
-            .await?
-            .bytes()
-            .await?;
+        let info = self
+            .models
+            .get(name)
+            .ok_or(Error::ModelNotFound(name.clone()))?
+            .get(version)
+            .ok_or(Error::ModelNotFound(version.clone()))?;
+        let path = Path::from(info.source());
+        let data = self.store.get(&path).await?.bytes().await?;
         Ok(Arc::new(OnnxInferenceHandler::try_new(data).await?))
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CatalogInfo {
+    models: Vec<RegisteredModel>,
 }

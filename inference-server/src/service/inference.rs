@@ -1,7 +1,37 @@
+use std::sync::Arc;
+
 use super::ModelService;
+use crate::error::{Error, ModelServerResult};
+use crate::models::InferenceHandler;
+
+use dashmap::mapref::one::Ref;
 use inference_protocol::inference_service_server::InferenceService;
 use inference_protocol::*;
 use tonic::{Request, Response, Status};
+
+fn model_key(name: &String, version: &String) -> String {
+    format!("{name}::{version}")
+}
+
+impl ModelService {
+    async fn get_model_instance(
+        &self,
+        name: &String,
+        version: &String,
+    ) -> ModelServerResult<Ref<'_, String, Arc<dyn InferenceHandler>>> {
+        if let Some(inst) = self.instances.get(&model_key(name, version)) {
+            return Ok(inst);
+        }
+        for (_, repo) in self.repositories.iter() {
+            if repo.contains_model(name).await {
+                let handler = repo.get(name, version).await?;
+                self.instances.insert(model_key(name, version), handler);
+                return Ok(self.instances.get(&model_key(name, version)).unwrap());
+            }
+        }
+        Err(Error::ModelNotFound(name.clone()))
+    }
+}
 
 #[tonic::async_trait]
 impl InferenceService for ModelService {
@@ -50,8 +80,11 @@ impl InferenceService for ModelService {
         &self,
         request: Request<ModelInferRequest>,
     ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let handler = self.instances.get("onnx").unwrap();
-        let result = handler.predict(request.into_inner()).await?;
+        let infer_request = request.into_inner();
+        let handler = self
+            .get_model_instance(&infer_request.model_name, &infer_request.model_version)
+            .await?;
+        let result = handler.predict(infer_request).await?;
         Ok(Response::new(result))
     }
 }

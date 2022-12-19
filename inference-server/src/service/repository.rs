@@ -25,13 +25,10 @@ impl ModelRepositoryService for ModelService {
             load_request.model_name, load_request.repository_name
         );
 
-        let repository = self
-            .get_repository(&load_request.repository_name)
-            .ok_or(Error::RepositoryNotFound(load_request.repository_name))?;
-        let model = repository
-            .get(load_request.model_name.clone(), Default::default())
+        self.get_repository(&load_request.repository_name)
+            .ok_or(Error::RepositoryNotFound(load_request.repository_name))?
+            .load(&load_request.model_name)
             .await?;
-        self.instances.insert(load_request.model_name, model);
 
         Ok(Response::new(RepositoryModelLoadResponse {}))
     }

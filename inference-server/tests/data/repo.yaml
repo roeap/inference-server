@@ -1,0 +1,6 @@
+models:
+  - name: lightgbm-onnx
+    description: "A test model using lightgbm"
+    latest_versions:
+      - version: "1"
+        source: model.onnx

@@ -1,6 +1,9 @@
 mod gen {
     include!("gen/inference.rs");
     include!("gen/inference.model_repository.rs");
+    pub mod mlflow {
+        include!("gen/mlflow.rs");
+    }
 }
 
 pub mod model_repository_service_server {
@@ -23,6 +26,11 @@ pub mod inference_service_server {
 pub mod inference_service_client {
     use super::gen;
     pub use gen::grpc_inference_service_client::GrpcInferenceServiceClient as InferenceServiceClient;
+}
+
+pub mod mlflow {
+    use super::gen;
+    pub use gen::mlflow::{ModelVersion, RegisteredModel};
 }
 
 // model repository
