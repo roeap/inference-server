@@ -1,9 +1,8 @@
 //! handlers
-use std::sync::Arc;
-
 use crate::error::ModelServerResult;
 use crate::models::InferenceHandler;
 
+use bytes::{Buf, Bytes};
 use inference_protocol::{
     InferOutputTensor, InferTensorContents, ModelInferRequest, ModelInferResponse,
 };
@@ -24,8 +23,9 @@ impl std::fmt::Display for OnnxInferenceHandler {
 }
 
 impl OnnxInferenceHandler {
-    pub async fn try_new(path: impl AsRef<std::path::Path>) -> ModelServerResult<Self> {
-        let model = onnx().model_for_path(path)?.into_runnable()?;
+    /// Create a new [`OnnxInferenceHandler`] instance
+    pub async fn try_new(data: Bytes) -> ModelServerResult<Self> {
+        let model = onnx().model_for_read(&mut data.reader())?.into_runnable()?;
         Ok(Self { model })
     }
 }

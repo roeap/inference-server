@@ -7,9 +7,9 @@ install:
 
 # generate V2 inference API types
 generate:
-    buf generate buf.build/mlfusion/inference
+    buf generate buf.build/robstar/inference-protocol
     buf generate buf.build/mlfusion/mlflow
-    cd python && buf generate buf.build/mlfusion/inference
+    cd python && buf generate buf.build/robstar/inference-protocol
 
     poetry run black python/
     poetry run ruff --fix python/

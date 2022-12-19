@@ -9,6 +9,8 @@ use crate::models::InferenceHandler;
 use crate::repositories::RepositoryHandler;
 
 use dashmap::DashMap;
+use inference_protocol::inference_service_server::InferenceServiceServer;
+use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
 
 /// A service implementation handling model repositories and model instances
 #[derive(Clone, Default, Debug)]
@@ -27,5 +29,17 @@ impl ModelService {
             instances: instances.unwrap_or_default(),
             repositories: repositories.unwrap_or_default(),
         }
+    }
+
+    /// Consume self, to add grpc services that can be added to a server
+    pub fn into_services(
+        self,
+    ) -> (
+        InferenceServiceServer<ModelService>,
+        ModelRepositoryServiceServer<ModelService>,
+    ) {
+        let inference = InferenceServiceServer::new(self.clone());
+        let repository = ModelRepositoryServiceServer::new(self);
+        (inference, repository)
     }
 }

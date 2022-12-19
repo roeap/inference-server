@@ -59,8 +59,8 @@ pub use gen::InferTensorContents;
 pub use gen::ModelInferRequest;
 pub use gen::ModelInferResponse;
 
-#[cfg(feature = "tract")]
+#[cfg(feature = "onnx")]
 mod tract;
 
-#[cfg(feature = "tract")]
+#[cfg(feature = "onnx")]
 pub use crate::tract::*;

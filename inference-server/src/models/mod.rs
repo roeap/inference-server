@@ -5,6 +5,7 @@ use crate::error::ModelServerResult;
 
 use inference_protocol::{ModelInferRequest, ModelInferResponse};
 
+#[cfg(feature = "onnx")]
 pub use onnx::OnnxInferenceHandler;
 
 /// Trait for running inference with a model

@@ -9,18 +9,17 @@
     clippy::clone_on_ref_ptr
 )]
 //! A high performance inference server compliant eith V2 inference API
-pub mod error;
-pub mod models;
-pub mod repositories;
-pub mod service;
+mod error;
+mod models;
+mod repositories;
+mod service;
 
 use std::{collections::HashMap, sync::Arc};
 
-use repositories::{RepositoryHandler, StorageRepository};
+use crate::repositories::{RepositoryHandler, StorageRepository};
+use crate::service::ModelService;
 
-use inference_protocol::inference_service_server::InferenceServiceServer;
-use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
-use service::ModelService;
+use object_store::local::LocalFileSystem;
 use tonic::transport::Server;
 use tracing::info;
 use tracing_subscriber::{self, layer::SubscriberExt, prelude::*};
@@ -36,12 +35,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(stdout_log)
         .try_init()?;
 
-    let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();
-    repositories.insert("default".to_string(), Arc::new(StorageRepository {}));
+    let store = Arc::new(LocalFileSystem::new_with_prefix(
+        "/home/reap/code/inference-server/inference-server/tests/data",
+    )?);
 
-    let service = ModelService::new(Some(Arc::new(repositories)), None);
-    let repo_svc = ModelRepositoryServiceServer::new(service.clone());
-    let infer_svc = InferenceServiceServer::new(service);
+    let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();
+    repositories.insert(
+        "default".to_string(),
+        Arc::new(StorageRepository::new(store)),
+    );
+
+    let (infer_svc, repo_svc) =
+        ModelService::new(Some(Arc::new(repositories)), None).into_services();
 
     info!("Listening on 0.0.0.0:50051");
 

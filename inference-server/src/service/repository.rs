@@ -2,7 +2,6 @@ use super::ModelService;
 
 use inference_protocol::model_repository_service_server::ModelRepositoryService;
 use inference_protocol::*;
-
 use tonic::{Request, Response, Status};
 use tracing::info;
 
@@ -29,7 +28,9 @@ impl ModelRepositoryService for ModelService {
             .repositories
             .get(&load_request.repository_name)
             .unwrap();
-        let model = repository.get(&load_request.model_name, None).await?;
+        let model = repository
+            .get(load_request.model_name.clone(), Default::default())
+            .await?;
         self.instances.insert(load_request.model_name, model);
 
         Ok(Response::new(RepositoryModelLoadResponse {}))

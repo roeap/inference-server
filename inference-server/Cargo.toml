@@ -25,3 +25,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tract-hir = { version = "0.18.5" }
 tract-onnx = { version = "0.18.5" }
+
+[features]
+default = ["onnx"]
+onnx = ["inference-protocol/onnx"]
