@@ -9,9 +9,7 @@ install:
 generate:
     buf generate buf.build/mlfusion/inference
     buf generate buf.build/mlfusion/mlflow
-
-    rm -rf python/inference-client/inference_client/gen/mlflow
-    rm -rf python/inference-client/inference_client/gen/scalapb
+    cd python && buf generate buf.build/mlfusion/inference
 
     poetry run black python/
     poetry run ruff --fix python/

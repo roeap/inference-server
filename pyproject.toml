@@ -67,7 +67,7 @@ select = ['B', 'C', 'E', 'F', "I", "S", 'W']
   "S101", # allow asserts in test files (bandit)
 ]
 "python/inference-client/inference_client/gen/*" = [
-  "F841",
+  "F841", # Local variable is assigned to but never used
   "S107", # Possible hardcoded password
 ]
 
