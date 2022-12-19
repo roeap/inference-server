@@ -1,14 +1,10 @@
-use crate::handler::{InferenceHandler, OnnxInferenceHandler};
-
+use super::ModelService;
 use inference_protocol::inference_service_server::InferenceService;
 use inference_protocol::*;
 use tonic::{Request, Response, Status};
 
-#[derive(Clone)]
-pub struct InferenceServiceImpl {}
-
 #[tonic::async_trait]
-impl InferenceService for InferenceServiceImpl {
+impl InferenceService for ModelService {
     async fn server_live(
         &self,
         _request: Request<ServerLiveRequest>,
@@ -54,8 +50,8 @@ impl InferenceService for InferenceServiceImpl {
         &self,
         request: Request<ModelInferRequest>,
     ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let handler = OnnxInferenceHandler {};
-        let result = handler.predict(request.into_inner()).await.unwrap();
+        let handler = self.model_handlers.get("onnx").unwrap();
+        let result = handler.predict(request.into_inner()).await?;
         Ok(Response::new(result))
     }
 }

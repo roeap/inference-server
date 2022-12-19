@@ -1,12 +1,25 @@
+#![deny(rustdoc::broken_intra_doc_links, rustdoc::bare_urls, rust_2018_idioms)]
+#![warn(
+    missing_copy_implementations,
+    missing_debug_implementations,
+    missing_docs,
+    clippy::explicit_iter_loop,
+    clippy::future_not_send,
+    clippy::use_self,
+    clippy::clone_on_ref_ptr
+)]
+//! A high performance inference server compliant eith V2 inference API
 pub mod error;
 pub mod handler;
-pub mod inference;
-pub mod repository;
+pub mod service;
 
-use inference::InferenceServiceImpl;
+use std::sync::Arc;
+
+use dashmap::DashMap;
+use handler::OnnxInferenceHandler;
 use inference_protocol::inference_service_server::InferenceServiceServer;
 use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
-use repository::ModelRepositoryServiceImpl;
+use service::{InferenceHandler, ModelService};
 use tonic::transport::Server;
 use tracing::info;
 use tracing_subscriber::{self, layer::SubscriberExt, prelude::*};
@@ -22,8 +35,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(stdout_log)
         .try_init()?;
 
-    let infer_svc = InferenceServiceServer::new(InferenceServiceImpl {});
-    let repo_svc = ModelRepositoryServiceServer::new(ModelRepositoryServiceImpl {});
+    let model_handlers: Arc<DashMap<String, Arc<dyn InferenceHandler>>> = Arc::new(DashMap::new());
+    model_handlers.insert("onnx".to_string(), Arc::new(OnnxInferenceHandler {}));
+
+    let service = ModelService::new(model_handlers);
+    let repo_svc = ModelRepositoryServiceServer::new(service.clone());
+    let infer_svc = InferenceServiceServer::new(service);
 
     info!("Listening on 0.0.0.0:50051");
 

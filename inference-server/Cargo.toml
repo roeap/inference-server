@@ -9,6 +9,8 @@ inference-protocol = { path = "../inference-protocol", version = "0.1" }
 
 # creates.io dependencies
 bytes = { version = "1", default-features = false }
+dashmap = "5.4"
+futures = "*"
 prost = { version = "0.11", default-features = false }
 rand = { version = "0.8.4", features = ["small_rng"] }
 thiserror = "1"

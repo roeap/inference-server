@@ -13,3 +13,6 @@ generate:
 
     poetry run black python/
     poetry run ruff --fix python/
+
+run:
+    RUST_LOG="debug" cargo run -p inference-server

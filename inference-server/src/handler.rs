@@ -1,14 +1,12 @@
-use crate::error::Result;
+//! handlers
+use crate::error::ModelServerResult;
+use crate::service::InferenceHandler;
 use inference_protocol::{
     InferOutputTensor, InferTensorContents, ModelInferRequest, ModelInferResponse,
 };
 use tract_onnx::prelude::*;
 
-#[tonic::async_trait]
-pub trait InferenceHandler: std::fmt::Display + Send + Sync + std::fmt::Debug + 'static {
-    async fn predict(&self, request: ModelInferRequest) -> Result<ModelInferResponse>;
-}
-
+/// Inference handler for ONNX models.
 #[derive(Debug)]
 pub struct OnnxInferenceHandler {}
 
@@ -19,14 +17,14 @@ impl std::fmt::Display for OnnxInferenceHandler {
 }
 
 impl OnnxInferenceHandler {
-    pub async fn try_new() -> Result<Self> {
+    pub async fn try_new() -> ModelServerResult<Self> {
         Ok(Self {})
     }
 }
 
 #[tonic::async_trait]
 impl InferenceHandler for OnnxInferenceHandler {
-    async fn predict(&self, request: ModelInferRequest) -> Result<ModelInferResponse> {
+    async fn predict(&self, request: ModelInferRequest) -> ModelServerResult<ModelInferResponse> {
         let model = onnx()
             .model_for_path("inference-server/tests/data/model.onnx")?
             .into_runnable()?;

@@ -1,12 +1,10 @@
+use super::ModelService;
 use inference_protocol::model_repository_service_server::ModelRepositoryService;
 use inference_protocol::*;
 use tonic::{Request, Response, Status};
 
-#[derive(Clone)]
-pub struct ModelRepositoryServiceImpl {}
-
 #[tonic::async_trait]
-impl ModelRepositoryService for ModelRepositoryServiceImpl {
+impl ModelRepositoryService for ModelService {
     async fn repository_index(
         &self,
         _request: Request<RepositoryIndexRequest>,
