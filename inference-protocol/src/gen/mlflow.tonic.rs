@@ -528,28 +528,6 @@ pub mod model_registry_service_client {
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
-        pub async fn list_registered_models(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ListRegisteredModels>,
-        ) -> Result<
-            tonic::Response<super::list_registered_models::Response>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/mlflow.ModelRegistryService/listRegisteredModels",
-            );
-            self.inner.unary(request.into_request(), path, codec).await
-        }
         pub async fn get_latest_versions(
             &mut self,
             request: impl tonic::IntoRequest<super::GetLatestVersions>,
@@ -860,13 +838,6 @@ pub mod model_registry_service_server {
             request: tonic::Request<super::SearchRegisteredModels>,
         ) -> Result<
             tonic::Response<super::search_registered_models::Response>,
-            tonic::Status,
-        >;
-        async fn list_registered_models(
-            &self,
-            request: tonic::Request<super::ListRegisteredModels>,
-        ) -> Result<
-            tonic::Response<super::list_registered_models::Response>,
             tonic::Status,
         >;
         async fn get_latest_versions(
@@ -1242,46 +1213,6 @@ pub mod model_registry_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = searchRegisteredModelsSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/mlflow.ModelRegistryService/listRegisteredModels" => {
-                    #[allow(non_camel_case_types)]
-                    struct listRegisteredModelsSvc<T: ModelRegistryService>(pub Arc<T>);
-                    impl<
-                        T: ModelRegistryService,
-                    > tonic::server::UnaryService<super::ListRegisteredModels>
-                    for listRegisteredModelsSvc<T> {
-                        type Response = super::list_registered_models::Response;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::ListRegisteredModels>,
-                        ) -> Self::Future {
-                            let inner = self.0.clone();
-                            let fut = async move {
-                                (*inner).list_registered_models(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = listRegisteredModelsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1929,10 +1860,13 @@ pub mod mlflow_service_client {
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
-        pub async fn list_experiments(
+        pub async fn search_experiments(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListExperiments>,
-        ) -> Result<tonic::Response<super::list_experiments::Response>, tonic::Status> {
+            request: impl tonic::IntoRequest<super::SearchExperiments>,
+        ) -> Result<
+            tonic::Response<super::search_experiments::Response>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -1944,7 +1878,7 @@ pub mod mlflow_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/mlflow.MlflowService/listExperiments",
+                "/mlflow.MlflowService/searchExperiments",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
@@ -2338,10 +2272,10 @@ pub mod mlflow_service_server {
             &self,
             request: tonic::Request<super::CreateExperiment>,
         ) -> Result<tonic::Response<super::create_experiment::Response>, tonic::Status>;
-        async fn list_experiments(
+        async fn search_experiments(
             &self,
-            request: tonic::Request<super::ListExperiments>,
-        ) -> Result<tonic::Response<super::list_experiments::Response>, tonic::Status>;
+            request: tonic::Request<super::SearchExperiments>,
+        ) -> Result<tonic::Response<super::search_experiments::Response>, tonic::Status>;
         async fn get_experiment(
             &self,
             request: tonic::Request<super::GetExperiment>,
@@ -2558,25 +2492,25 @@ pub mod mlflow_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/mlflow.MlflowService/listExperiments" => {
+                "/mlflow.MlflowService/searchExperiments" => {
                     #[allow(non_camel_case_types)]
-                    struct listExperimentsSvc<T: MlflowService>(pub Arc<T>);
+                    struct searchExperimentsSvc<T: MlflowService>(pub Arc<T>);
                     impl<
                         T: MlflowService,
-                    > tonic::server::UnaryService<super::ListExperiments>
-                    for listExperimentsSvc<T> {
-                        type Response = super::list_experiments::Response;
+                    > tonic::server::UnaryService<super::SearchExperiments>
+                    for searchExperimentsSvc<T> {
+                        type Response = super::search_experiments::Response;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ListExperiments>,
+                            request: tonic::Request<super::SearchExperiments>,
                         ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move {
-                                (*inner).list_experiments(request).await
+                                (*inner).search_experiments(request).await
                             };
                             Box::pin(fut)
                         }
@@ -2586,7 +2520,7 @@ pub mod mlflow_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = listExperimentsSvc(inner);
+                        let method = searchExperimentsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

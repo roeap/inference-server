@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .try_init()?;
 
     let store = Arc::new(LocalFileSystem::new_with_prefix(
-        "/home/reap/code/inference-server/inference-server/tests/data",
+        "inference-server/tests/data",
     )?);
 
     let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();

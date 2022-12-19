@@ -16,6 +16,10 @@ pub enum Error {
     /// Error accesing backend artifact storage
     #[error("Error interacting with objuect store: {0}")]
     Storage(#[from] object_store::Error),
+
+    /// A requested repsoitory was not found in the reposity index
+    #[error("Repository '{0}' not registered")]
+    RepositoryNotFound(String),
 }
 
 /// Shared result type for ModelService
@@ -27,6 +31,7 @@ impl From<Error> for Status {
             Error::Inference(err) => Status::internal(err.to_string()),
             Error::DataConversion(err) => Status::failed_precondition(err.to_string()),
             Error::Storage(err) => Status::internal(err.to_string()),
+            Error::RepositoryNotFound(err) => Status::not_found(err.to_string()),
         }
     }
 }

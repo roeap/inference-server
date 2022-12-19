@@ -392,6 +392,7 @@ impl serde::Serialize for ArtifactCredentialType {
             Self::AzureSasUri => "AZURE_SAS_URI",
             Self::AwsPresignedUrl => "AWS_PRESIGNED_URL",
             Self::GcpSignedUrl => "GCP_SIGNED_URL",
+            Self::AzureAdlsGen2SasUri => "AZURE_ADLS_GEN2_SAS_URI",
         };
         serializer.serialize_str(variant)
     }
@@ -406,6 +407,7 @@ impl<'de> serde::Deserialize<'de> for ArtifactCredentialType {
             "AZURE_SAS_URI",
             "AWS_PRESIGNED_URL",
             "GCP_SIGNED_URL",
+            "AZURE_ADLS_GEN2_SAS_URI",
         ];
 
         struct GeneratedVisitor;
@@ -451,6 +453,7 @@ impl<'de> serde::Deserialize<'de> for ArtifactCredentialType {
                     "AZURE_SAS_URI" => Ok(ArtifactCredentialType::AzureSasUri),
                     "AWS_PRESIGNED_URL" => Ok(ArtifactCredentialType::AwsPresignedUrl),
                     "GCP_SIGNED_URL" => Ok(ArtifactCredentialType::GcpSignedUrl),
+                    "AZURE_ADLS_GEN2_SAS_URI" => Ok(ArtifactCredentialType::AzureAdlsGen2SasUri),
                     _ => Err(serde::de::Error::unknown_variant(value, FIELDS)),
                 }
             }
@@ -1177,6 +1180,9 @@ impl serde::Serialize for CreateRun {
         if self.user_id.is_some() {
             len += 1;
         }
+        if self.run_name.is_some() {
+            len += 1;
+        }
         if self.start_time.is_some() {
             len += 1;
         }
@@ -1189,6 +1195,9 @@ impl serde::Serialize for CreateRun {
         }
         if let Some(v) = self.user_id.as_ref() {
             struct_ser.serialize_field("userId", v)?;
+        }
+        if let Some(v) = self.run_name.as_ref() {
+            struct_ser.serialize_field("runName", v)?;
         }
         if let Some(v) = self.start_time.as_ref() {
             struct_ser.serialize_field("startTime", ToString::to_string(&v).as_str())?;
@@ -1210,6 +1219,8 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
             "experimentId",
             "user_id",
             "userId",
+            "run_name",
+            "runName",
             "start_time",
             "startTime",
             "tags",
@@ -1219,6 +1230,7 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
         enum GeneratedField {
             ExperimentId,
             UserId,
+            RunName,
             StartTime,
             Tags,
         }
@@ -1244,6 +1256,7 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
                         match value {
                             "experimentId" | "experiment_id" => Ok(GeneratedField::ExperimentId),
                             "userId" | "user_id" => Ok(GeneratedField::UserId),
+                            "runName" | "run_name" => Ok(GeneratedField::RunName),
                             "startTime" | "start_time" => Ok(GeneratedField::StartTime),
                             "tags" => Ok(GeneratedField::Tags),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
@@ -1267,6 +1280,7 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
             {
                 let mut experiment_id__ = None;
                 let mut user_id__ = None;
+                let mut run_name__ = None;
                 let mut start_time__ = None;
                 let mut tags__ = None;
                 while let Some(k) = map.next_key()? {
@@ -1282,6 +1296,12 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
                                 return Err(serde::de::Error::duplicate_field("userId"));
                             }
                             user_id__ = map.next_value()?;
+                        }
+                        GeneratedField::RunName => {
+                            if run_name__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("runName"));
+                            }
+                            run_name__ = map.next_value()?;
                         }
                         GeneratedField::StartTime => {
                             if start_time__.is_some() {
@@ -1302,6 +1322,7 @@ impl<'de> serde::Deserialize<'de> for CreateRun {
                 Ok(CreateRun {
                     experiment_id: experiment_id__,
                     user_id: user_id__,
+                    run_name: run_name__,
                     start_time: start_time__,
                     tags: tags__.unwrap_or_default(),
                 })
@@ -4240,15 +4261,9 @@ impl serde::Serialize for get_experiment::Response {
         if self.experiment.is_some() {
             len += 1;
         }
-        if !self.runs.is_empty() {
-            len += 1;
-        }
         let mut struct_ser = serializer.serialize_struct("mlflow.GetExperiment.Response", len)?;
         if let Some(v) = self.experiment.as_ref() {
             struct_ser.serialize_field("experiment", v)?;
-        }
-        if !self.runs.is_empty() {
-            struct_ser.serialize_field("runs", &self.runs)?;
         }
         struct_ser.end()
     }
@@ -4261,13 +4276,11 @@ impl<'de> serde::Deserialize<'de> for get_experiment::Response {
     {
         const FIELDS: &[&str] = &[
             "experiment",
-            "runs",
         ];
 
         #[allow(clippy::enum_variant_names)]
         enum GeneratedField {
             Experiment,
-            Runs,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -4290,7 +4303,6 @@ impl<'de> serde::Deserialize<'de> for get_experiment::Response {
                     {
                         match value {
                             "experiment" => Ok(GeneratedField::Experiment),
-                            "runs" => Ok(GeneratedField::Runs),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -4311,7 +4323,6 @@ impl<'de> serde::Deserialize<'de> for get_experiment::Response {
                     V: serde::de::MapAccess<'de>,
             {
                 let mut experiment__ = None;
-                let mut runs__ = None;
                 while let Some(k) = map.next_key()? {
                     match k {
                         GeneratedField::Experiment => {
@@ -4320,17 +4331,10 @@ impl<'de> serde::Deserialize<'de> for get_experiment::Response {
                             }
                             experiment__ = map.next_value()?;
                         }
-                        GeneratedField::Runs => {
-                            if runs__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("runs"));
-                            }
-                            runs__ = Some(map.next_value()?);
-                        }
                     }
                 }
                 Ok(get_experiment::Response {
                     experiment: experiment__,
-                    runs: runs__.unwrap_or_default(),
                 })
             }
         }
@@ -4737,6 +4741,12 @@ impl serde::Serialize for GetMetricHistory {
         if self.metric_key.is_some() {
             len += 1;
         }
+        if self.page_token.is_some() {
+            len += 1;
+        }
+        if self.max_results.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("mlflow.GetMetricHistory", len)?;
         if let Some(v) = self.run_id.as_ref() {
             struct_ser.serialize_field("runId", v)?;
@@ -4746,6 +4756,12 @@ impl serde::Serialize for GetMetricHistory {
         }
         if let Some(v) = self.metric_key.as_ref() {
             struct_ser.serialize_field("metricKey", v)?;
+        }
+        if let Some(v) = self.page_token.as_ref() {
+            struct_ser.serialize_field("pageToken", v)?;
+        }
+        if let Some(v) = self.max_results.as_ref() {
+            struct_ser.serialize_field("maxResults", v)?;
         }
         struct_ser.end()
     }
@@ -4763,6 +4779,10 @@ impl<'de> serde::Deserialize<'de> for GetMetricHistory {
             "runUuid",
             "metric_key",
             "metricKey",
+            "page_token",
+            "pageToken",
+            "max_results",
+            "maxResults",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -4770,6 +4790,8 @@ impl<'de> serde::Deserialize<'de> for GetMetricHistory {
             RunId,
             RunUuid,
             MetricKey,
+            PageToken,
+            MaxResults,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -4794,6 +4816,8 @@ impl<'de> serde::Deserialize<'de> for GetMetricHistory {
                             "runId" | "run_id" => Ok(GeneratedField::RunId),
                             "runUuid" | "run_uuid" => Ok(GeneratedField::RunUuid),
                             "metricKey" | "metric_key" => Ok(GeneratedField::MetricKey),
+                            "pageToken" | "page_token" => Ok(GeneratedField::PageToken),
+                            "maxResults" | "max_results" => Ok(GeneratedField::MaxResults),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -4816,6 +4840,8 @@ impl<'de> serde::Deserialize<'de> for GetMetricHistory {
                 let mut run_id__ = None;
                 let mut run_uuid__ = None;
                 let mut metric_key__ = None;
+                let mut page_token__ = None;
+                let mut max_results__ = None;
                 while let Some(k) = map.next_key()? {
                     match k {
                         GeneratedField::RunId => {
@@ -4836,12 +4862,28 @@ impl<'de> serde::Deserialize<'de> for GetMetricHistory {
                             }
                             metric_key__ = map.next_value()?;
                         }
+                        GeneratedField::PageToken => {
+                            if page_token__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("pageToken"));
+                            }
+                            page_token__ = map.next_value()?;
+                        }
+                        GeneratedField::MaxResults => {
+                            if max_results__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("maxResults"));
+                            }
+                            max_results__ =
+                                map.next_value::<::std::option::Option<::pbjson::private::NumberDeserialize<_>>>()?.map(|x| x.0)
+                            ;
+                        }
                     }
                 }
                 Ok(GetMetricHistory {
                     run_id: run_id__,
                     run_uuid: run_uuid__,
                     metric_key: metric_key__,
+                    page_token: page_token__,
+                    max_results: max_results__,
                 })
             }
         }
@@ -4859,9 +4901,15 @@ impl serde::Serialize for get_metric_history::Response {
         if !self.metrics.is_empty() {
             len += 1;
         }
+        if self.next_page_token.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("mlflow.GetMetricHistory.Response", len)?;
         if !self.metrics.is_empty() {
             struct_ser.serialize_field("metrics", &self.metrics)?;
+        }
+        if let Some(v) = self.next_page_token.as_ref() {
+            struct_ser.serialize_field("nextPageToken", v)?;
         }
         struct_ser.end()
     }
@@ -4874,11 +4922,14 @@ impl<'de> serde::Deserialize<'de> for get_metric_history::Response {
     {
         const FIELDS: &[&str] = &[
             "metrics",
+            "next_page_token",
+            "nextPageToken",
         ];
 
         #[allow(clippy::enum_variant_names)]
         enum GeneratedField {
             Metrics,
+            NextPageToken,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -4901,6 +4952,7 @@ impl<'de> serde::Deserialize<'de> for get_metric_history::Response {
                     {
                         match value {
                             "metrics" => Ok(GeneratedField::Metrics),
+                            "nextPageToken" | "next_page_token" => Ok(GeneratedField::NextPageToken),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -4921,6 +4973,7 @@ impl<'de> serde::Deserialize<'de> for get_metric_history::Response {
                     V: serde::de::MapAccess<'de>,
             {
                 let mut metrics__ = None;
+                let mut next_page_token__ = None;
                 while let Some(k) = map.next_key()? {
                     match k {
                         GeneratedField::Metrics => {
@@ -4929,10 +4982,17 @@ impl<'de> serde::Deserialize<'de> for get_metric_history::Response {
                             }
                             metrics__ = Some(map.next_value()?);
                         }
+                        GeneratedField::NextPageToken => {
+                            if next_page_token__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("nextPageToken"));
+                            }
+                            next_page_token__ = map.next_value()?;
+                        }
                     }
                 }
                 Ok(get_metric_history::Response {
                     metrics: metrics__.unwrap_or_default(),
+                    next_page_token: next_page_token__,
                 })
             }
         }
@@ -6118,469 +6178,6 @@ impl<'de> serde::Deserialize<'de> for list_artifacts::Response {
             }
         }
         deserializer.deserialize_struct("mlflow.ListArtifacts.Response", FIELDS, GeneratedVisitor)
-    }
-}
-impl serde::Serialize for ListExperiments {
-    #[allow(deprecated)]
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let mut len = 0;
-        if self.view_type.is_some() {
-            len += 1;
-        }
-        if self.max_results.is_some() {
-            len += 1;
-        }
-        if self.page_token.is_some() {
-            len += 1;
-        }
-        let mut struct_ser = serializer.serialize_struct("mlflow.ListExperiments", len)?;
-        if let Some(v) = self.view_type.as_ref() {
-            let v = ViewType::from_i32(*v)
-                .ok_or_else(|| serde::ser::Error::custom(format!("Invalid variant {}", *v)))?;
-            struct_ser.serialize_field("viewType", &v)?;
-        }
-        if let Some(v) = self.max_results.as_ref() {
-            struct_ser.serialize_field("maxResults", ToString::to_string(&v).as_str())?;
-        }
-        if let Some(v) = self.page_token.as_ref() {
-            struct_ser.serialize_field("pageToken", v)?;
-        }
-        struct_ser.end()
-    }
-}
-impl<'de> serde::Deserialize<'de> for ListExperiments {
-    #[allow(deprecated)]
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        const FIELDS: &[&str] = &[
-            "view_type",
-            "viewType",
-            "max_results",
-            "maxResults",
-            "page_token",
-            "pageToken",
-        ];
-
-        #[allow(clippy::enum_variant_names)]
-        enum GeneratedField {
-            ViewType,
-            MaxResults,
-            PageToken,
-        }
-        impl<'de> serde::Deserialize<'de> for GeneratedField {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                struct GeneratedVisitor;
-
-                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-                    type Value = GeneratedField;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        write!(formatter, "expected one of: {:?}", &FIELDS)
-                    }
-
-                    #[allow(unused_variables)]
-                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        match value {
-                            "viewType" | "view_type" => Ok(GeneratedField::ViewType),
-                            "maxResults" | "max_results" => Ok(GeneratedField::MaxResults),
-                            "pageToken" | "page_token" => Ok(GeneratedField::PageToken),
-                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-                deserializer.deserialize_identifier(GeneratedVisitor)
-            }
-        }
-        struct GeneratedVisitor;
-        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-            type Value = ListExperiments;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                formatter.write_str("struct mlflow.ListExperiments")
-            }
-
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<ListExperiments, V::Error>
-                where
-                    V: serde::de::MapAccess<'de>,
-            {
-                let mut view_type__ = None;
-                let mut max_results__ = None;
-                let mut page_token__ = None;
-                while let Some(k) = map.next_key()? {
-                    match k {
-                        GeneratedField::ViewType => {
-                            if view_type__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("viewType"));
-                            }
-                            view_type__ = map.next_value::<::std::option::Option<ViewType>>()?.map(|x| x as i32);
-                        }
-                        GeneratedField::MaxResults => {
-                            if max_results__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("maxResults"));
-                            }
-                            max_results__ =
-                                map.next_value::<::std::option::Option<::pbjson::private::NumberDeserialize<_>>>()?.map(|x| x.0)
-                            ;
-                        }
-                        GeneratedField::PageToken => {
-                            if page_token__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("pageToken"));
-                            }
-                            page_token__ = map.next_value()?;
-                        }
-                    }
-                }
-                Ok(ListExperiments {
-                    view_type: view_type__,
-                    max_results: max_results__,
-                    page_token: page_token__,
-                })
-            }
-        }
-        deserializer.deserialize_struct("mlflow.ListExperiments", FIELDS, GeneratedVisitor)
-    }
-}
-impl serde::Serialize for list_experiments::Response {
-    #[allow(deprecated)]
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let mut len = 0;
-        if !self.experiments.is_empty() {
-            len += 1;
-        }
-        if self.next_page_token.is_some() {
-            len += 1;
-        }
-        let mut struct_ser = serializer.serialize_struct("mlflow.ListExperiments.Response", len)?;
-        if !self.experiments.is_empty() {
-            struct_ser.serialize_field("experiments", &self.experiments)?;
-        }
-        if let Some(v) = self.next_page_token.as_ref() {
-            struct_ser.serialize_field("nextPageToken", v)?;
-        }
-        struct_ser.end()
-    }
-}
-impl<'de> serde::Deserialize<'de> for list_experiments::Response {
-    #[allow(deprecated)]
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        const FIELDS: &[&str] = &[
-            "experiments",
-            "next_page_token",
-            "nextPageToken",
-        ];
-
-        #[allow(clippy::enum_variant_names)]
-        enum GeneratedField {
-            Experiments,
-            NextPageToken,
-        }
-        impl<'de> serde::Deserialize<'de> for GeneratedField {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                struct GeneratedVisitor;
-
-                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-                    type Value = GeneratedField;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        write!(formatter, "expected one of: {:?}", &FIELDS)
-                    }
-
-                    #[allow(unused_variables)]
-                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        match value {
-                            "experiments" => Ok(GeneratedField::Experiments),
-                            "nextPageToken" | "next_page_token" => Ok(GeneratedField::NextPageToken),
-                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-                deserializer.deserialize_identifier(GeneratedVisitor)
-            }
-        }
-        struct GeneratedVisitor;
-        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-            type Value = list_experiments::Response;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                formatter.write_str("struct mlflow.ListExperiments.Response")
-            }
-
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<list_experiments::Response, V::Error>
-                where
-                    V: serde::de::MapAccess<'de>,
-            {
-                let mut experiments__ = None;
-                let mut next_page_token__ = None;
-                while let Some(k) = map.next_key()? {
-                    match k {
-                        GeneratedField::Experiments => {
-                            if experiments__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("experiments"));
-                            }
-                            experiments__ = Some(map.next_value()?);
-                        }
-                        GeneratedField::NextPageToken => {
-                            if next_page_token__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("nextPageToken"));
-                            }
-                            next_page_token__ = map.next_value()?;
-                        }
-                    }
-                }
-                Ok(list_experiments::Response {
-                    experiments: experiments__.unwrap_or_default(),
-                    next_page_token: next_page_token__,
-                })
-            }
-        }
-        deserializer.deserialize_struct("mlflow.ListExperiments.Response", FIELDS, GeneratedVisitor)
-    }
-}
-impl serde::Serialize for ListRegisteredModels {
-    #[allow(deprecated)]
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let mut len = 0;
-        if self.max_results.is_some() {
-            len += 1;
-        }
-        if self.page_token.is_some() {
-            len += 1;
-        }
-        let mut struct_ser = serializer.serialize_struct("mlflow.ListRegisteredModels", len)?;
-        if let Some(v) = self.max_results.as_ref() {
-            struct_ser.serialize_field("maxResults", ToString::to_string(&v).as_str())?;
-        }
-        if let Some(v) = self.page_token.as_ref() {
-            struct_ser.serialize_field("pageToken", v)?;
-        }
-        struct_ser.end()
-    }
-}
-impl<'de> serde::Deserialize<'de> for ListRegisteredModels {
-    #[allow(deprecated)]
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        const FIELDS: &[&str] = &[
-            "max_results",
-            "maxResults",
-            "page_token",
-            "pageToken",
-        ];
-
-        #[allow(clippy::enum_variant_names)]
-        enum GeneratedField {
-            MaxResults,
-            PageToken,
-        }
-        impl<'de> serde::Deserialize<'de> for GeneratedField {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                struct GeneratedVisitor;
-
-                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-                    type Value = GeneratedField;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        write!(formatter, "expected one of: {:?}", &FIELDS)
-                    }
-
-                    #[allow(unused_variables)]
-                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        match value {
-                            "maxResults" | "max_results" => Ok(GeneratedField::MaxResults),
-                            "pageToken" | "page_token" => Ok(GeneratedField::PageToken),
-                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-                deserializer.deserialize_identifier(GeneratedVisitor)
-            }
-        }
-        struct GeneratedVisitor;
-        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-            type Value = ListRegisteredModels;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                formatter.write_str("struct mlflow.ListRegisteredModels")
-            }
-
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<ListRegisteredModels, V::Error>
-                where
-                    V: serde::de::MapAccess<'de>,
-            {
-                let mut max_results__ = None;
-                let mut page_token__ = None;
-                while let Some(k) = map.next_key()? {
-                    match k {
-                        GeneratedField::MaxResults => {
-                            if max_results__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("maxResults"));
-                            }
-                            max_results__ =
-                                map.next_value::<::std::option::Option<::pbjson::private::NumberDeserialize<_>>>()?.map(|x| x.0)
-                            ;
-                        }
-                        GeneratedField::PageToken => {
-                            if page_token__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("pageToken"));
-                            }
-                            page_token__ = map.next_value()?;
-                        }
-                    }
-                }
-                Ok(ListRegisteredModels {
-                    max_results: max_results__,
-                    page_token: page_token__,
-                })
-            }
-        }
-        deserializer.deserialize_struct("mlflow.ListRegisteredModels", FIELDS, GeneratedVisitor)
-    }
-}
-impl serde::Serialize for list_registered_models::Response {
-    #[allow(deprecated)]
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let mut len = 0;
-        if !self.registered_models.is_empty() {
-            len += 1;
-        }
-        if self.next_page_token.is_some() {
-            len += 1;
-        }
-        let mut struct_ser = serializer.serialize_struct("mlflow.ListRegisteredModels.Response", len)?;
-        if !self.registered_models.is_empty() {
-            struct_ser.serialize_field("registeredModels", &self.registered_models)?;
-        }
-        if let Some(v) = self.next_page_token.as_ref() {
-            struct_ser.serialize_field("nextPageToken", v)?;
-        }
-        struct_ser.end()
-    }
-}
-impl<'de> serde::Deserialize<'de> for list_registered_models::Response {
-    #[allow(deprecated)]
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        const FIELDS: &[&str] = &[
-            "registered_models",
-            "registeredModels",
-            "next_page_token",
-            "nextPageToken",
-        ];
-
-        #[allow(clippy::enum_variant_names)]
-        enum GeneratedField {
-            RegisteredModels,
-            NextPageToken,
-        }
-        impl<'de> serde::Deserialize<'de> for GeneratedField {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
-            where
-                D: serde::Deserializer<'de>,
-            {
-                struct GeneratedVisitor;
-
-                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-                    type Value = GeneratedField;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                        write!(formatter, "expected one of: {:?}", &FIELDS)
-                    }
-
-                    #[allow(unused_variables)]
-                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        match value {
-                            "registeredModels" | "registered_models" => Ok(GeneratedField::RegisteredModels),
-                            "nextPageToken" | "next_page_token" => Ok(GeneratedField::NextPageToken),
-                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
-                        }
-                    }
-                }
-                deserializer.deserialize_identifier(GeneratedVisitor)
-            }
-        }
-        struct GeneratedVisitor;
-        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
-            type Value = list_registered_models::Response;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                formatter.write_str("struct mlflow.ListRegisteredModels.Response")
-            }
-
-            fn visit_map<V>(self, mut map: V) -> std::result::Result<list_registered_models::Response, V::Error>
-                where
-                    V: serde::de::MapAccess<'de>,
-            {
-                let mut registered_models__ = None;
-                let mut next_page_token__ = None;
-                while let Some(k) = map.next_key()? {
-                    match k {
-                        GeneratedField::RegisteredModels => {
-                            if registered_models__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("registeredModels"));
-                            }
-                            registered_models__ = Some(map.next_value()?);
-                        }
-                        GeneratedField::NextPageToken => {
-                            if next_page_token__.is_some() {
-                                return Err(serde::de::Error::duplicate_field("nextPageToken"));
-                            }
-                            next_page_token__ = map.next_value()?;
-                        }
-                    }
-                }
-                Ok(list_registered_models::Response {
-                    registered_models: registered_models__.unwrap_or_default(),
-                    next_page_token: next_page_token__,
-                })
-            }
-        }
-        deserializer.deserialize_struct("mlflow.ListRegisteredModels.Response", FIELDS, GeneratedVisitor)
     }
 }
 impl serde::Serialize for LogBatch {
@@ -9393,6 +8990,9 @@ impl serde::Serialize for RunInfo {
         if self.run_uuid.is_some() {
             len += 1;
         }
+        if self.run_name.is_some() {
+            len += 1;
+        }
         if self.experiment_id.is_some() {
             len += 1;
         }
@@ -9420,6 +9020,9 @@ impl serde::Serialize for RunInfo {
         }
         if let Some(v) = self.run_uuid.as_ref() {
             struct_ser.serialize_field("runUuid", v)?;
+        }
+        if let Some(v) = self.run_name.as_ref() {
+            struct_ser.serialize_field("runName", v)?;
         }
         if let Some(v) = self.experiment_id.as_ref() {
             struct_ser.serialize_field("experimentId", v)?;
@@ -9458,6 +9061,8 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
             "runId",
             "run_uuid",
             "runUuid",
+            "run_name",
+            "runName",
             "experiment_id",
             "experimentId",
             "user_id",
@@ -9477,6 +9082,7 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
         enum GeneratedField {
             RunId,
             RunUuid,
+            RunName,
             ExperimentId,
             UserId,
             Status,
@@ -9507,6 +9113,7 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
                         match value {
                             "runId" | "run_id" => Ok(GeneratedField::RunId),
                             "runUuid" | "run_uuid" => Ok(GeneratedField::RunUuid),
+                            "runName" | "run_name" => Ok(GeneratedField::RunName),
                             "experimentId" | "experiment_id" => Ok(GeneratedField::ExperimentId),
                             "userId" | "user_id" => Ok(GeneratedField::UserId),
                             "status" => Ok(GeneratedField::Status),
@@ -9535,6 +9142,7 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
             {
                 let mut run_id__ = None;
                 let mut run_uuid__ = None;
+                let mut run_name__ = None;
                 let mut experiment_id__ = None;
                 let mut user_id__ = None;
                 let mut status__ = None;
@@ -9555,6 +9163,12 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
                                 return Err(serde::de::Error::duplicate_field("runUuid"));
                             }
                             run_uuid__ = map.next_value()?;
+                        }
+                        GeneratedField::RunName => {
+                            if run_name__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("runName"));
+                            }
+                            run_name__ = map.next_value()?;
                         }
                         GeneratedField::ExperimentId => {
                             if experiment_id__.is_some() {
@@ -9607,6 +9221,7 @@ impl<'de> serde::Deserialize<'de> for RunInfo {
                 Ok(RunInfo {
                     run_id: run_id__,
                     run_uuid: run_uuid__,
+                    run_name: run_name__,
                     experiment_id: experiment_id__,
                     user_id: user_id__,
                     status: status__,
@@ -9808,6 +9423,282 @@ impl<'de> serde::Deserialize<'de> for RunTag {
             }
         }
         deserializer.deserialize_struct("mlflow.RunTag", FIELDS, GeneratedVisitor)
+    }
+}
+impl serde::Serialize for SearchExperiments {
+    #[allow(deprecated)]
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut len = 0;
+        if self.max_results.is_some() {
+            len += 1;
+        }
+        if self.page_token.is_some() {
+            len += 1;
+        }
+        if self.filter.is_some() {
+            len += 1;
+        }
+        if !self.order_by.is_empty() {
+            len += 1;
+        }
+        if self.view_type.is_some() {
+            len += 1;
+        }
+        let mut struct_ser = serializer.serialize_struct("mlflow.SearchExperiments", len)?;
+        if let Some(v) = self.max_results.as_ref() {
+            struct_ser.serialize_field("maxResults", ToString::to_string(&v).as_str())?;
+        }
+        if let Some(v) = self.page_token.as_ref() {
+            struct_ser.serialize_field("pageToken", v)?;
+        }
+        if let Some(v) = self.filter.as_ref() {
+            struct_ser.serialize_field("filter", v)?;
+        }
+        if !self.order_by.is_empty() {
+            struct_ser.serialize_field("orderBy", &self.order_by)?;
+        }
+        if let Some(v) = self.view_type.as_ref() {
+            let v = ViewType::from_i32(*v)
+                .ok_or_else(|| serde::ser::Error::custom(format!("Invalid variant {}", *v)))?;
+            struct_ser.serialize_field("viewType", &v)?;
+        }
+        struct_ser.end()
+    }
+}
+impl<'de> serde::Deserialize<'de> for SearchExperiments {
+    #[allow(deprecated)]
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        const FIELDS: &[&str] = &[
+            "max_results",
+            "maxResults",
+            "page_token",
+            "pageToken",
+            "filter",
+            "order_by",
+            "orderBy",
+            "view_type",
+            "viewType",
+        ];
+
+        #[allow(clippy::enum_variant_names)]
+        enum GeneratedField {
+            MaxResults,
+            PageToken,
+            Filter,
+            OrderBy,
+            ViewType,
+        }
+        impl<'de> serde::Deserialize<'de> for GeneratedField {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                struct GeneratedVisitor;
+
+                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+                    type Value = GeneratedField;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        write!(formatter, "expected one of: {:?}", &FIELDS)
+                    }
+
+                    #[allow(unused_variables)]
+                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        match value {
+                            "maxResults" | "max_results" => Ok(GeneratedField::MaxResults),
+                            "pageToken" | "page_token" => Ok(GeneratedField::PageToken),
+                            "filter" => Ok(GeneratedField::Filter),
+                            "orderBy" | "order_by" => Ok(GeneratedField::OrderBy),
+                            "viewType" | "view_type" => Ok(GeneratedField::ViewType),
+                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+                deserializer.deserialize_identifier(GeneratedVisitor)
+            }
+        }
+        struct GeneratedVisitor;
+        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+            type Value = SearchExperiments;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("struct mlflow.SearchExperiments")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<SearchExperiments, V::Error>
+                where
+                    V: serde::de::MapAccess<'de>,
+            {
+                let mut max_results__ = None;
+                let mut page_token__ = None;
+                let mut filter__ = None;
+                let mut order_by__ = None;
+                let mut view_type__ = None;
+                while let Some(k) = map.next_key()? {
+                    match k {
+                        GeneratedField::MaxResults => {
+                            if max_results__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("maxResults"));
+                            }
+                            max_results__ =
+                                map.next_value::<::std::option::Option<::pbjson::private::NumberDeserialize<_>>>()?.map(|x| x.0)
+                            ;
+                        }
+                        GeneratedField::PageToken => {
+                            if page_token__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("pageToken"));
+                            }
+                            page_token__ = map.next_value()?;
+                        }
+                        GeneratedField::Filter => {
+                            if filter__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("filter"));
+                            }
+                            filter__ = map.next_value()?;
+                        }
+                        GeneratedField::OrderBy => {
+                            if order_by__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("orderBy"));
+                            }
+                            order_by__ = Some(map.next_value()?);
+                        }
+                        GeneratedField::ViewType => {
+                            if view_type__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("viewType"));
+                            }
+                            view_type__ = map.next_value::<::std::option::Option<ViewType>>()?.map(|x| x as i32);
+                        }
+                    }
+                }
+                Ok(SearchExperiments {
+                    max_results: max_results__,
+                    page_token: page_token__,
+                    filter: filter__,
+                    order_by: order_by__.unwrap_or_default(),
+                    view_type: view_type__,
+                })
+            }
+        }
+        deserializer.deserialize_struct("mlflow.SearchExperiments", FIELDS, GeneratedVisitor)
+    }
+}
+impl serde::Serialize for search_experiments::Response {
+    #[allow(deprecated)]
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut len = 0;
+        if !self.experiments.is_empty() {
+            len += 1;
+        }
+        if self.next_page_token.is_some() {
+            len += 1;
+        }
+        let mut struct_ser = serializer.serialize_struct("mlflow.SearchExperiments.Response", len)?;
+        if !self.experiments.is_empty() {
+            struct_ser.serialize_field("experiments", &self.experiments)?;
+        }
+        if let Some(v) = self.next_page_token.as_ref() {
+            struct_ser.serialize_field("nextPageToken", v)?;
+        }
+        struct_ser.end()
+    }
+}
+impl<'de> serde::Deserialize<'de> for search_experiments::Response {
+    #[allow(deprecated)]
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        const FIELDS: &[&str] = &[
+            "experiments",
+            "next_page_token",
+            "nextPageToken",
+        ];
+
+        #[allow(clippy::enum_variant_names)]
+        enum GeneratedField {
+            Experiments,
+            NextPageToken,
+        }
+        impl<'de> serde::Deserialize<'de> for GeneratedField {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                struct GeneratedVisitor;
+
+                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+                    type Value = GeneratedField;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        write!(formatter, "expected one of: {:?}", &FIELDS)
+                    }
+
+                    #[allow(unused_variables)]
+                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        match value {
+                            "experiments" => Ok(GeneratedField::Experiments),
+                            "nextPageToken" | "next_page_token" => Ok(GeneratedField::NextPageToken),
+                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+                deserializer.deserialize_identifier(GeneratedVisitor)
+            }
+        }
+        struct GeneratedVisitor;
+        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+            type Value = search_experiments::Response;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("struct mlflow.SearchExperiments.Response")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> std::result::Result<search_experiments::Response, V::Error>
+                where
+                    V: serde::de::MapAccess<'de>,
+            {
+                let mut experiments__ = None;
+                let mut next_page_token__ = None;
+                while let Some(k) = map.next_key()? {
+                    match k {
+                        GeneratedField::Experiments => {
+                            if experiments__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("experiments"));
+                            }
+                            experiments__ = Some(map.next_value()?);
+                        }
+                        GeneratedField::NextPageToken => {
+                            if next_page_token__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("nextPageToken"));
+                            }
+                            next_page_token__ = map.next_value()?;
+                        }
+                    }
+                }
+                Ok(search_experiments::Response {
+                    experiments: experiments__.unwrap_or_default(),
+                    next_page_token: next_page_token__,
+                })
+            }
+        }
+        deserializer.deserialize_struct("mlflow.SearchExperiments.Response", FIELDS, GeneratedVisitor)
     }
 }
 impl serde::Serialize for SearchModelVersions {
@@ -12374,6 +12265,9 @@ impl serde::Serialize for UpdateRun {
         if self.end_time.is_some() {
             len += 1;
         }
+        if self.run_name.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("mlflow.UpdateRun", len)?;
         if let Some(v) = self.run_id.as_ref() {
             struct_ser.serialize_field("runId", v)?;
@@ -12388,6 +12282,9 @@ impl serde::Serialize for UpdateRun {
         }
         if let Some(v) = self.end_time.as_ref() {
             struct_ser.serialize_field("endTime", ToString::to_string(&v).as_str())?;
+        }
+        if let Some(v) = self.run_name.as_ref() {
+            struct_ser.serialize_field("runName", v)?;
         }
         struct_ser.end()
     }
@@ -12406,6 +12303,8 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
             "status",
             "end_time",
             "endTime",
+            "run_name",
+            "runName",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -12414,6 +12313,7 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
             RunUuid,
             Status,
             EndTime,
+            RunName,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -12439,6 +12339,7 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
                             "runUuid" | "run_uuid" => Ok(GeneratedField::RunUuid),
                             "status" => Ok(GeneratedField::Status),
                             "endTime" | "end_time" => Ok(GeneratedField::EndTime),
+                            "runName" | "run_name" => Ok(GeneratedField::RunName),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -12462,6 +12363,7 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
                 let mut run_uuid__ = None;
                 let mut status__ = None;
                 let mut end_time__ = None;
+                let mut run_name__ = None;
                 while let Some(k) = map.next_key()? {
                     match k {
                         GeneratedField::RunId => {
@@ -12490,6 +12392,12 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
                                 map.next_value::<::std::option::Option<::pbjson::private::NumberDeserialize<_>>>()?.map(|x| x.0)
                             ;
                         }
+                        GeneratedField::RunName => {
+                            if run_name__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("runName"));
+                            }
+                            run_name__ = map.next_value()?;
+                        }
                     }
                 }
                 Ok(UpdateRun {
@@ -12497,6 +12405,7 @@ impl<'de> serde::Deserialize<'de> for UpdateRun {
                     run_uuid: run_uuid__,
                     status: status__,
                     end_time: end_time__,
+                    run_name: run_name__,
                 })
             }
         }

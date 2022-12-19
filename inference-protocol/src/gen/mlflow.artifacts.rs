@@ -33,6 +33,15 @@ pub mod list_artifacts {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteArtifact {
+}
+/// Nested message and enum types in `DeleteArtifact`.
+pub mod delete_artifact {
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct Response {
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileInfo {
     /// Path relative to the root artifact directory run.
     #[prost(string, optional, tag="1")]

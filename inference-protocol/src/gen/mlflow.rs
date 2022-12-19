@@ -319,6 +319,12 @@ pub enum ArtifactCredentialType {
     /// The credential is a GCP Signed URL. For more information, see
     /// <https://cloud.google.com/storage/docs/access-control/signed-urls>
     GcpSignedUrl = 3,
+    /// The credential is an Azure Shared Access Signature URI for ADLS.  For more
+    /// information see
+    /// <https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2>
+    /// and
+    /// <https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview>
+    AzureAdlsGen2SasUri = 4,
 }
 impl ArtifactCredentialType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -330,6 +336,7 @@ impl ArtifactCredentialType {
             ArtifactCredentialType::AzureSasUri => "AZURE_SAS_URI",
             ArtifactCredentialType::AwsPresignedUrl => "AWS_PRESIGNED_URL",
             ArtifactCredentialType::GcpSignedUrl => "GCP_SIGNED_URL",
+            ArtifactCredentialType::AzureAdlsGen2SasUri => "AZURE_ADLS_GEN2_SAS_URI",
         }
     }
 }
@@ -398,7 +405,8 @@ pub struct ModelVersion {
     /// Tags: Additional metadata key-value pairs for this ``model_version``.
     #[prost(message, repeated, tag="12")]
     pub tags: ::prost::alloc::vec::Vec<ModelVersionTag>,
-    /// Run Link: Direct link to the run that generated this version
+    /// Run Link: Direct link to the run that generated this version. This field is set at model version creation time
+    /// only for model versions whose source run is from a tracking server that is different from the registry server.
     #[prost(string, optional, tag="13")]
     pub run_link: ::core::option::Option<::prost::alloc::string::String>,
 }
@@ -480,26 +488,6 @@ pub mod get_registered_model {
     pub struct Response {
         #[prost(message, optional, tag="1")]
         pub registered_model: ::core::option::Option<super::RegisteredModel>,
-    }
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListRegisteredModels {
-    /// Maximum number of registered models desired. Max threshold is 1000.
-    #[prost(int64, optional, tag="1", default="100")]
-    pub max_results: ::core::option::Option<i64>,
-    /// Pagination token to go to the next page based on a previous query.
-    #[prost(string, optional, tag="2")]
-    pub page_token: ::core::option::Option<::prost::alloc::string::String>,
-}
-/// Nested message and enum types in `ListRegisteredModels`.
-pub mod list_registered_models {
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct Response {
-        #[prost(message, repeated, tag="1")]
-        pub registered_models: ::prost::alloc::vec::Vec<super::RegisteredModel>,
-        /// Pagination token to request next page of models for the same query.
-        #[prost(string, optional, tag="2")]
-        pub next_page_token: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -913,6 +901,9 @@ pub struct RunInfo {
     /// be removed in a future MLflow version.
     #[prost(string, optional, tag="1")]
     pub run_uuid: ::core::option::Option<::prost::alloc::string::String>,
+    /// The name of the run.
+    #[prost(string, optional, tag="3")]
+    pub run_name: ::core::option::Option<::prost::alloc::string::String>,
     /// The experiment ID.
     #[prost(string, optional, tag="2")]
     pub experiment_id: ::core::option::Option<::prost::alloc::string::String>,
@@ -992,30 +983,50 @@ pub mod create_experiment {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListExperiments {
-    /// Qualifier for type of experiments to be returned.
-    /// If unspecified, return only active experiments.
-    #[prost(enumeration="ViewType", optional, tag="1")]
-    pub view_type: ::core::option::Option<i32>,
+pub struct SearchExperiments {
     /// Maximum number of experiments desired.
     /// Servers may select a desired default `max_results` value. All servers are
     /// guaranteed to support a `max_results` threshold of at least 1,000 but may
     /// support more. Callers of this endpoint are encouraged to pass max_results
     /// explicitly and leverage page_token to iterate through experiments.
-    #[prost(int64, optional, tag="2")]
+    #[prost(int64, optional, tag="1")]
     pub max_results: ::core::option::Option<i64>,
-    /// Pagination token to go to the next page based on a previous query.
-    #[prost(string, optional, tag="3")]
+    /// Token indicating the page of experiments to fetch
+    #[prost(string, optional, tag="2")]
     pub page_token: ::core::option::Option<::prost::alloc::string::String>,
+    /// A filter expression over experiment attributes and tags that allows returning a subset of
+    /// experiments. The syntax is a subset of SQL that supports ANDing together binary operations
+    /// between an attribute or tag, and a constant.
+    ///
+    /// Example: ``name LIKE 'test-%' AND tags.key = 'value'``
+    ///
+    /// You can select columns with special characters (hyphen, space, period, etc.) by using
+    /// double quotes or backticks.
+    ///
+    /// Example: ``tags."extra-key" = 'value'`` or ``tags.`extra-key` = 'value'``
+    ///
+    /// Supported operators are ``=``, ``!=``, ``LIKE``, and ``ILIKE``.
+    #[prost(string, optional, tag="3")]
+    pub filter: ::core::option::Option<::prost::alloc::string::String>,
+    /// List of columns for ordering search results, which can include experiment name and id
+    /// with an optional "DESC" or "ASC" annotation, where "ASC" is the default.
+    /// Tiebreaks are done by experiment id DESC.
+    #[prost(string, repeated, tag="4")]
+    pub order_by: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    /// Qualifier for type of experiments to be returned.
+    /// If unspecified, return only active experiments.
+    #[prost(enumeration="ViewType", optional, tag="5")]
+    pub view_type: ::core::option::Option<i32>,
 }
-/// Nested message and enum types in `ListExperiments`.
-pub mod list_experiments {
+/// Nested message and enum types in `SearchExperiments`.
+pub mod search_experiments {
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Response {
-        /// All experiments.
+        /// Experiments that match the search criteria
         #[prost(message, repeated, tag="1")]
         pub experiments: ::prost::alloc::vec::Vec<super::Experiment>,
-        /// Pagination token to request next page of experiments for the same query.
+        /// Token that can be used to retrieve the next page of experiments.
+        /// An empty token means that no more experiments are available for retrieval.
         #[prost(string, optional, tag="2")]
         pub next_page_token: ::core::option::Option<::prost::alloc::string::String>,
     }
@@ -1033,14 +1044,6 @@ pub mod get_experiment {
         /// Experiment details.
         #[prost(message, optional, tag="1")]
         pub experiment: ::core::option::Option<super::Experiment>,
-        /// A collection of active runs in the experiment. Note: this may not contain
-        /// all of the experiment's active runs.
-        ///
-        /// This field is deprecated. Please use the "Search Runs" API to fetch
-        /// runs within an experiment.
-        #[deprecated]
-        #[prost(message, repeated, tag="2")]
-        pub runs: ::prost::alloc::vec::Vec<super::RunInfo>,
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1092,6 +1095,9 @@ pub struct CreateRun {
     /// MLflow release. Use 'mlflow.user' tag instead.
     #[prost(string, optional, tag="2")]
     pub user_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Name of the run.
+    #[prost(string, optional, tag="3")]
+    pub run_name: ::core::option::Option<::prost::alloc::string::String>,
     /// Unix timestamp in milliseconds of when the run started.
     #[prost(int64, optional, tag="7")]
     pub start_time: ::core::option::Option<i64>,
@@ -1123,6 +1129,9 @@ pub struct UpdateRun {
     /// Unix timestamp in milliseconds of when the run ended.
     #[prost(int64, optional, tag="3")]
     pub end_time: ::core::option::Option<i64>,
+    /// Updated name of the run.
+    #[prost(string, optional, tag="5")]
+    pub run_name: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// Nested message and enum types in `UpdateRun`.
 pub mod update_run {
@@ -1389,6 +1398,15 @@ pub struct GetMetricHistory {
     /// Name of the metric.
     #[prost(string, optional, tag="2")]
     pub metric_key: ::core::option::Option<::prost::alloc::string::String>,
+    /// Token indicating the page of metric history to fetch
+    #[prost(string, optional, tag="4")]
+    pub page_token: ::core::option::Option<::prost::alloc::string::String>,
+    /// Maximum number of logged instances of a metric for a run to return per call.
+    /// Backend servers may restrict the value of `max_results` depending on performance requirements.
+    /// Requests that do not specify this value will behave as non-paginated queries where all
+    /// metric history values for a given metric within a run are returned in a single response.
+    #[prost(int32, optional, tag="5")]
+    pub max_results: ::core::option::Option<i32>,
 }
 /// Nested message and enum types in `GetMetricHistory`.
 pub mod get_metric_history {
@@ -1397,6 +1415,10 @@ pub mod get_metric_history {
         /// All logged values for this metric.
         #[prost(message, repeated, tag="1")]
         pub metrics: ::prost::alloc::vec::Vec<super::Metric>,
+        /// Token that can be used to issue a query for the next page of metric history values.
+        /// A missing token indicates that no additional metrics are available to fetch.
+        #[prost(string, optional, tag="2")]
+        pub next_page_token: ::core::option::Option<::prost::alloc::string::String>,
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

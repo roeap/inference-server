@@ -12,6 +12,8 @@ use dashmap::DashMap;
 use inference_protocol::inference_service_server::InferenceServiceServer;
 use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
 
+const DEFAULT_REPOSITORY_NAME: &str = "default";
+
 /// A service implementation handling model repositories and model instances
 #[derive(Clone, Default, Debug)]
 pub struct ModelService {
@@ -41,5 +43,11 @@ impl ModelService {
         let inference = InferenceServiceServer::new(self.clone());
         let repository = ModelRepositoryServiceServer::new(self);
         (inference, repository)
+    }
+
+    fn get_repository(&self, name: &String) -> Option<&Arc<dyn RepositoryHandler>> {
+        let default = String::from(DEFAULT_REPOSITORY_NAME);
+        let repository_name = if name.is_empty() { &default } else { name };
+        self.repositories.get(repository_name)
     }
 }

@@ -1,4 +1,5 @@
 use super::ModelService;
+use crate::error::Error;
 
 use inference_protocol::model_repository_service_server::ModelRepositoryService;
 use inference_protocol::*;
@@ -25,9 +26,8 @@ impl ModelRepositoryService for ModelService {
         );
 
         let repository = self
-            .repositories
-            .get(&load_request.repository_name)
-            .unwrap();
+            .get_repository(&load_request.repository_name)
+            .ok_or(Error::RepositoryNotFound(load_request.repository_name))?;
         let model = repository
             .get(load_request.model_name.clone(), Default::default())
             .await?;
