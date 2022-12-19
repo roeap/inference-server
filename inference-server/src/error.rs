@@ -2,34 +2,27 @@
 use tonic::Status;
 use tract_onnx::prelude::{tract_ndarray::ShapeError, TractError};
 
-/// Shared error type for ModelService
 #[derive(thiserror::Error, Debug)]
+#[allow(missing_docs)]
 pub enum Error {
-    /// Error occured during model inference
     #[error("Error during model inference: {0}")]
     Inference(#[from] TractError),
 
-    /// Error occuring when handling data conversion
     #[error("Error converting data: {0}")]
     DataConversion(#[from] ShapeError),
 
-    /// Error accesing backend artifact storage
     #[error("Error interacting with objuect store: {0}")]
     Storage(#[from] object_store::Error),
 
-    /// A requested repsoitory was not found in the reposity index
     #[error("Repository '{0}' not registered")]
     RepositoryNotFound(String),
 
-    /// A requested model was not loaded
     #[error("Repository '{0}' not loaded.")]
     ModelNotFound(String),
 
-    /// A specific model version was not loaded
     #[error("Repository '{0}' not loaded.")]
     VersionNotFound(String),
 
-    /// Error when reading catalog file
     #[error("Failed to read catalog file: {0}")]
     MalformedCatalogFile(#[from] serde_yaml::Error),
 }

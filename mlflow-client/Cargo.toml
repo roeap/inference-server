@@ -1,0 +1,33 @@
+[package]
+name = "mlflow-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies] # In alphabetical order
+async-trait = "0.1.53"
+bytes = "1.0"
+futures = "0.3"
+parking_lot = { version = "0.12" }
+rand = { version = "0.8", default-features = false, features = [
+  "std",
+  "std_rng",
+] }
+reqwest = { version = "0.11", default-features = false, features = [
+  "rustls-tls",
+] }
+thiserror = "1"
+tokio = { version = "1.18", features = [
+  "sync",
+  "macros",
+  "rt",
+  "time",
+  "io-util",
+] }
+tracing = { version = "0.1" }
+
+[dev-dependencies] # In alphabetical order
+dotenv = "0.15.0"
+tempfile = "3.1.0"
+futures-test = "0.3"
+rand = "0.8"
+hyper = { version = "0.14", features = ["server"] }
