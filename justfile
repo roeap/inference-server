@@ -7,8 +7,8 @@ install:
 
 # generate V2 inference API types
 generate:
-    buf generate buf.build/robstar/inference-protocol
-    buf generate buf.build/robstar/mlflow
+    cd inference-protocol && buf generate buf.build/robstar/inference-protocol
+    cd inference-protocol && buf generate buf.build/robstar/mlflow
     cd python && buf generate buf.build/robstar/inference-protocol
 
     poetry run black python/
