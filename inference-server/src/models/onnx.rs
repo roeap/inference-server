@@ -1,14 +1,21 @@
 //! handlers
+use std::sync::Arc;
+
 use crate::error::ModelServerResult;
-use crate::service::InferenceHandler;
+use crate::models::InferenceHandler;
+
 use inference_protocol::{
     InferOutputTensor, InferTensorContents, ModelInferRequest, ModelInferResponse,
 };
+use tract_hir::infer::InferenceOp;
 use tract_onnx::prelude::*;
 
 /// Inference handler for ONNX models.
-#[derive(Debug)]
-pub struct OnnxInferenceHandler {}
+#[derive(Debug, Clone)]
+pub struct OnnxInferenceHandler {
+    model:
+        SimplePlan<InferenceFact, Box<dyn InferenceOp>, Graph<InferenceFact, Box<dyn InferenceOp>>>,
+}
 
 impl std::fmt::Display for OnnxInferenceHandler {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -17,20 +24,17 @@ impl std::fmt::Display for OnnxInferenceHandler {
 }
 
 impl OnnxInferenceHandler {
-    pub async fn try_new() -> ModelServerResult<Self> {
-        Ok(Self {})
+    pub async fn try_new(path: impl AsRef<std::path::Path>) -> ModelServerResult<Self> {
+        let model = onnx().model_for_path(path)?.into_runnable()?;
+        Ok(Self { model })
     }
 }
 
 #[tonic::async_trait]
 impl InferenceHandler for OnnxInferenceHandler {
     async fn predict(&self, request: ModelInferRequest) -> ModelServerResult<ModelInferResponse> {
-        let model = onnx()
-            .model_for_path("inference-server/tests/data/model.onnx")?
-            .into_runnable()?;
-
         // Input the generated data into the model
-        let result = model.run(request.try_into()?)?;
+        let result = self.model.run(request.try_into()?)?;
         let to_show = result[0].to_array_view::<f32>()?;
         let data = to_show.as_slice().unwrap().to_vec();
 

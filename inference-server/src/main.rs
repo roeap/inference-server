@@ -10,16 +10,17 @@
 )]
 //! A high performance inference server compliant eith V2 inference API
 pub mod error;
-pub mod handler;
+pub mod models;
+pub mod repositories;
 pub mod service;
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use dashmap::DashMap;
-use handler::OnnxInferenceHandler;
+use repositories::{RepositoryHandler, StorageRepository};
+
 use inference_protocol::inference_service_server::InferenceServiceServer;
 use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
-use service::{InferenceHandler, ModelService};
+use service::ModelService;
 use tonic::transport::Server;
 use tracing::info;
 use tracing_subscriber::{self, layer::SubscriberExt, prelude::*};
@@ -35,10 +36,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(stdout_log)
         .try_init()?;
 
-    let model_handlers: Arc<DashMap<String, Arc<dyn InferenceHandler>>> = Arc::new(DashMap::new());
-    model_handlers.insert("onnx".to_string(), Arc::new(OnnxInferenceHandler {}));
+    let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();
+    repositories.insert("default".to_string(), Arc::new(StorageRepository {}));
 
-    let service = ModelService::new(model_handlers);
+    let service = ModelService::new(Some(Arc::new(repositories)), None);
     let repo_svc = ModelRepositoryServiceServer::new(service.clone());
     let infer_svc = InferenceServiceServer::new(service);
 

@@ -50,7 +50,7 @@ impl InferenceService for ModelService {
         &self,
         request: Request<ModelInferRequest>,
     ) -> std::result::Result<Response<ModelInferResponse>, Status> {
-        let handler = self.model_handlers.get("onnx").unwrap();
+        let handler = self.instances.get("onnx").unwrap();
         let result = handler.predict(request.into_inner()).await?;
         Ok(Response::new(result))
     }
