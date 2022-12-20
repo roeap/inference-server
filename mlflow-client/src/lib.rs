@@ -6,30 +6,36 @@ mod gen {
 use std::collections::HashMap;
 
 use crate::client::retry::RetryExt;
-pub use crate::gen::create_experiment::Response as CreateExperimentResponse;
-pub use crate::gen::create_registered_model::Response as CreateRegisteredModelResponse;
-pub use crate::gen::create_run::Response as CreateRunResponse;
-pub use crate::gen::delete_experiment::Response as DeleteExperimentResponse;
-pub use crate::gen::delete_run::Response as DeleteRunResponse;
-pub use crate::gen::get_experiment::Response as GetExperimentResponse;
-pub use crate::gen::get_experiment_by_name::Response as GetExperimentByNameResponse;
-pub use crate::gen::get_registered_model::Response as GetRegisteredModelResponse;
-pub use crate::gen::rename_registered_model::Response as RenameRegisteredModelResponse;
-pub use crate::gen::restore_experiment::Response as RestoreExperimentResponse;
-pub use crate::gen::restore_run::Response as RestoreRunResponse;
-pub use crate::gen::search_experiments::Response as SearchExperimentsResponse;
-pub use crate::gen::update_experiment::Response as UpdateExperimentResponse;
-pub use crate::gen::update_registered_model::Response as UpdateRegisteredModelResponse;
-pub use crate::gen::GetRun as GetRunResponse;
-pub use crate::gen::ViewType;
-pub use crate::gen::{
-    CreateExperiment, CreateRegisteredModel, CreateRun, DeleteExperiment, DeleteRegisteredModel,
-    DeleteRun, ExperimentTag, GetExperiment, GetExperimentByName, GetRegisteredModel, GetRun,
+use crate::gen::create_experiment::Response as CreateExperimentResponse;
+use crate::gen::create_model_version::Response as CreateModelVersionResponse;
+use crate::gen::create_registered_model::Response as CreateRegisteredModelResponse;
+use crate::gen::create_run::Response as CreateRunResponse;
+use crate::gen::get_experiment::Response as GetExperimentResponse;
+use crate::gen::get_experiment_by_name::Response as GetExperimentByNameResponse;
+use crate::gen::get_latest_versions::Response as GetLatestVersionsResponse;
+use crate::gen::get_model_version::Response as GetModelVersionResponse;
+use crate::gen::get_model_version_download_uri::Response as GetModelVersionDownloadUriResponse;
+use crate::gen::get_registered_model::Response as GetRegisteredModelResponse;
+use crate::gen::rename_registered_model::Response as RenameRegisteredModelResponse;
+use crate::gen::search_experiments::Response as SearchExperimentsResponse;
+use crate::gen::search_model_versions::Response as SearchModelVersionResponse;
+use crate::gen::search_registered_models::Response as SearchRegisteredModelsResponse;
+use crate::gen::transition_model_version_stage::Response as TransitionModelVersionStageResponse;
+use crate::gen::update_model_version::Response as UpdateModelVersionResponse;
+use crate::gen::update_registered_model::Response as UpdateRegisteredModelResponse;
+use crate::gen::GetRun as GetRunResponse;
+use crate::gen::ViewType;
+use crate::gen::{
+    CreateExperiment, CreateModelVersion, CreateRegisteredModel, CreateRun, DeleteExperiment,
+    DeleteModelVersion, DeleteModelVersionTag, DeleteRegisteredModel, DeleteRegisteredModelTag,
+    DeleteRun, ExperimentTag, GetExperiment, GetExperimentByName, GetLatestVersions,
+    GetModelVersion, GetModelVersionDownloadUri, GetRegisteredModel, GetRun, ModelVersionTag,
     RegisteredModelTag, RenameRegisteredModel, RestoreExperiment, RestoreRun, RunTag,
-    SearchExperiments, UpdateRegisteredModel,
+    SearchExperiments, SearchModelVersions, SearchRegisteredModels, SetModelVersionTag,
+    SetRegisteredModelTag, TransitionModelVersionStage, UpdateExperiment, UpdateModelVersion,
+    UpdateRegisteredModel,
 };
 use bytes::Bytes;
-use gen::UpdateExperiment;
 use reqwest::{
     header::{HeaderValue, CONTENT_LENGTH},
     Client as ReqwestClient, Method, Response,
@@ -222,7 +228,7 @@ impl MlflowClient {
         view_type: Option<ViewType>,
     ) -> Result<SearchExperimentsResponse> {
         let payload = SearchExperiments {
-            max_results: max_results,
+            max_results,
             page_token: page_token.map(|t| t.into()),
             filter: filter.map(|t| t.into()),
             order_by: order_by
@@ -426,5 +432,250 @@ impl MlflowClient {
         self.request(Method::DELETE, "registered-models/delete", &payload)
             .await?;
         Ok(())
+    }
+
+    pub async fn search_registered_models(
+        &self,
+        max_results: Option<i64>,
+        page_token: Option<impl Into<String>>,
+        filter: Option<impl Into<String>>,
+        order_by: Option<Vec<impl Into<String>>>,
+    ) -> Result<SearchRegisteredModelsResponse> {
+        let payload = SearchRegisteredModels {
+            max_results,
+            page_token: page_token.map(|t| t.into()),
+            filter: filter.map(|t| t.into()),
+            order_by: order_by
+                .unwrap_or_default()
+                .into_iter()
+                .map(|o| o.into())
+                .collect(),
+        };
+        let response = self
+            .request(Method::GET, "registered-models/search", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_lastest_model_versions(
+        &self,
+        name: impl Into<String>,
+        stages: Option<Vec<impl Into<String>>>,
+    ) -> Result<GetLatestVersionsResponse> {
+        let payload = GetLatestVersions {
+            name: Some(name.into()),
+            stages: stages
+                .unwrap_or_default()
+                .into_iter()
+                .map(|s| s.into())
+                .collect(),
+        };
+        let response = self
+            .request(
+                Method::POST,
+                "registered-models/get-latest-versions",
+                &payload,
+            )
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn set_registered_model_tag(
+        &self,
+        name: impl Into<String>,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Result<()> {
+        let payload = SetRegisteredModelTag {
+            name: Some(name.into()),
+            key: Some(key.into()),
+            value: Some(value.into()),
+        };
+        self.request(Method::POST, "registered-models/set-tag", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_registered_model_tag(
+        &self,
+        name: impl Into<String>,
+        key: impl Into<String>,
+    ) -> Result<()> {
+        let payload = DeleteRegisteredModelTag {
+            name: Some(name.into()),
+            key: Some(key.into()),
+        };
+        self.request(Method::DELETE, "registered-models/delete-tag", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn create_model_version(
+        &self,
+        name: impl Into<String>,
+        source: impl Into<String>,
+        run_id: Option<impl Into<String>>,
+        tags: Option<HashMap<String, String>>,
+        run_link: Option<impl Into<String>>,
+        description: Option<impl Into<String>>,
+    ) -> Result<CreateModelVersionResponse> {
+        let payload = CreateModelVersion {
+            name: Some(name.into()),
+            source: Some(source.into()),
+            description: description.map(|d| d.into()),
+            run_id: run_id.map(|d| d.into()),
+            run_link: run_link.map(|d| d.into()),
+            tags: tags
+                .map(|t| {
+                    t.iter()
+                        .map(|(key, value)| ModelVersionTag {
+                            key: Some(key.clone()),
+                            value: Some(value.clone()),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+        };
+        let response = self
+            .request(Method::POST, "model-versions/create", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_model_version(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+    ) -> Result<GetModelVersionResponse> {
+        let payload = GetModelVersion {
+            name: Some(name.into()),
+            version: Some(version.into()),
+        };
+        let response = self
+            .request(Method::GET, "model-versions/get", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn update_model_version(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+        description: Option<impl Into<String>>,
+    ) -> Result<UpdateModelVersionResponse> {
+        let payload = UpdateModelVersion {
+            name: Some(name.into()),
+            version: Some(version.into()),
+            description: description.map(|d| d.into()),
+        };
+        let response = self
+            .request(Method::PATCH, "model-versions/update", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn delete_model_version(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+    ) -> Result<()> {
+        let payload = DeleteModelVersion {
+            name: Some(name.into()),
+            version: Some(version.into()),
+        };
+        self.request(Method::DELETE, "model-versions/delete", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn set_model_version_tag(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+        key: impl Into<String>,
+        value: impl Into<String>,
+    ) -> Result<()> {
+        let payload = SetModelVersionTag {
+            name: Some(name.into()),
+            version: Some(version.into()),
+            key: Some(key.into()),
+            value: Some(value.into()),
+        };
+        self.request(Method::POST, "model-versions/set-tag", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_model_version_tag(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+        key: impl Into<String>,
+    ) -> Result<()> {
+        let payload = DeleteModelVersionTag {
+            name: Some(name.into()),
+            version: Some(version.into()),
+            key: Some(key.into()),
+        };
+        self.request(Method::DELETE, "model-versions/delete-tag", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn search_model_versions(
+        &self,
+        max_results: Option<i64>,
+        page_token: Option<impl Into<String>>,
+        filter: Option<impl Into<String>>,
+        order_by: Option<Vec<impl Into<String>>>,
+    ) -> Result<SearchModelVersionResponse> {
+        let payload = SearchModelVersions {
+            max_results,
+            page_token: page_token.map(|t| t.into()),
+            filter: filter.map(|t| t.into()),
+            order_by: order_by
+                .unwrap_or_default()
+                .into_iter()
+                .map(|o| o.into())
+                .collect(),
+        };
+        let response = self
+            .request(Method::GET, "model-versions/search", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_model_version_download_uri(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+    ) -> Result<GetModelVersionDownloadUriResponse> {
+        let payload = GetModelVersionDownloadUri {
+            name: Some(name.into()),
+            version: Some(version.into()),
+        };
+        let response = self
+            .request(Method::GET, "model-versions/get-download-uri", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn tansition_model_version_stage(
+        &self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+        stage: impl Into<String>,
+        archive_existing_versions: bool,
+    ) -> Result<TransitionModelVersionStageResponse> {
+        let payload = TransitionModelVersionStage {
+            name: Some(name.into()),
+            version: Some(version.into()),
+            stage: Some(stage.into()),
+            archive_existing_versions: Some(archive_existing_versions),
+        };
+        let response = self
+            .request(Method::POST, "model-versions/transition-stage", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
     }
 }
