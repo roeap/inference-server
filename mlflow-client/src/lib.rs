@@ -6,16 +6,24 @@ mod gen {
 use std::collections::HashMap;
 
 use crate::client::retry::RetryExt;
-use crate::gen::{
-    create_registered_model::Response as CreateRegisteredModelResponse,
-    get_registered_model::Response as GetRegisteredModelResponse,
-    rename_registered_model::Response as RenameRegisteredModelResponse,
-    update_registered_model::Response as UpdateRegisteredModelResponse, CreateRegisteredModel,
-    DeleteRegisteredModel, GetRegisteredModel, RegisteredModelTag, RenameRegisteredModel,
-    UpdateRegisteredModel,
+pub use crate::gen::create_experiment::Response as CreateExperimentResponse;
+pub use crate::gen::create_registered_model::Response as CreateRegisteredModelResponse;
+pub use crate::gen::delete_experiment::Response as DeleteExperimentResponse;
+pub use crate::gen::get_experiment::Response as GetExperimentResponse;
+pub use crate::gen::get_experiment_by_name::Response as GetExperimentByNameResponse;
+pub use crate::gen::get_registered_model::Response as GetRegisteredModelResponse;
+pub use crate::gen::rename_registered_model::Response as RenameRegisteredModelResponse;
+pub use crate::gen::restore_experiment::Response as RestoreExperimentResponse;
+pub use crate::gen::search_experiments::Response as SearchExperimentsResponse;
+pub use crate::gen::update_experiment::Response as UpdateExperimentResponse;
+pub use crate::gen::update_registered_model::Response as UpdateRegisteredModelResponse;
+pub use crate::gen::{
+    CreateExperiment, CreateRegisteredModel, DeleteExperiment, DeleteRegisteredModel,
+    ExperimentTag, GetExperiment, GetExperimentByName, GetRegisteredModel, RegisteredModelTag,
+    RenameRegisteredModel, RestoreExperiment, SearchExperiments, UpdateRegisteredModel,
 };
-
 use bytes::Bytes;
+use gen::UpdateExperiment;
 use reqwest::{
     header::{HeaderValue, CONTENT_LENGTH},
     Client as ReqwestClient, Method, Response,
@@ -171,6 +179,91 @@ impl MlflowClient {
             // .with_azure_authorization(&credential, &self.config.account)
             .send_retry(&self.config.retry_config)
             .await?)
+    }
+
+    pub async fn create_experiment(
+        &self,
+        name: impl Into<String>,
+        artifact_location: Option<impl Into<String>>,
+        tags: Option<HashMap<String, String>>,
+    ) -> Result<CreateExperimentResponse> {
+        let payload = CreateExperiment {
+            name: Some(name.into()),
+            artifact_location: artifact_location.map(|d| d.into()),
+            tags: tags
+                .map(|t| {
+                    t.iter()
+                        .map(|(key, value)| ExperimentTag {
+                            key: Some(key.clone()),
+                            value: Some(value.clone()),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+        };
+        let response = self
+            .request(Method::POST, "experiments/create", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_experiment(
+        &self,
+        experiment_id: impl Into<String>,
+    ) -> Result<GetExperimentResponse> {
+        let payload = GetExperiment {
+            experiment_id: Some(experiment_id.into()),
+        };
+        let response = self
+            .request(Method::GET, "experiments/get", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_experiment_by_name(
+        &self,
+        experiment_name: impl Into<String>,
+    ) -> Result<GetExperimentByNameResponse> {
+        let payload = GetExperimentByName {
+            experiment_name: Some(experiment_name.into()),
+        };
+        let response = self
+            .request(Method::GET, "experiments/get-by-name", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn delete_experiment(&self, experiment_id: impl Into<String>) -> Result<()> {
+        let payload = DeleteExperiment {
+            experiment_id: Some(experiment_id.into()),
+        };
+        // TODO docs clearly say POST, but make sure its not DELETE afetr all
+        self.request(Method::POST, "experiments/delete", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn restore_experiment(&self, experiment_id: impl Into<String>) -> Result<()> {
+        let payload = RestoreExperiment {
+            experiment_id: Some(experiment_id.into()),
+        };
+        self.request(Method::POST, "experiments/restore", &payload)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_experiment(
+        &self,
+        experiment_id: impl Into<String>,
+        new_name: impl Into<String>,
+    ) -> Result<()> {
+        let payload = UpdateExperiment {
+            experiment_id: Some(experiment_id.into()),
+            new_name: Some(new_name.into()),
+        };
+        self.request(Method::POST, "experiments/update", &payload)
+            .await?;
+        Ok(())
     }
 
     pub async fn create_registered_model(
