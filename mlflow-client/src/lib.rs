@@ -1,18 +1,31 @@
 mod client;
+mod gen {
+    include!("gen/mlflow.rs");
+}
+
+use std::collections::HashMap;
 
 use crate::client::retry::RetryExt;
+use crate::gen::{
+    create_registered_model::Response as CreateRegisteredModelResponse,
+    get_registered_model::Response as GetRegisteredModelResponse,
+    rename_registered_model::Response as RenameRegisteredModelResponse,
+    update_registered_model::Response as UpdateRegisteredModelResponse, CreateRegisteredModel,
+    DeleteRegisteredModel, GetRegisteredModel, RegisteredModelTag, RenameRegisteredModel,
+    UpdateRegisteredModel,
+};
 
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use reqwest::{
     header::{HeaderValue, CONTENT_LENGTH},
-    Client as ReqwestClient, Method, Response, StatusCode,
+    Client as ReqwestClient, Method, Response,
 };
 use serde::Serialize;
 use url::Url;
 
 pub use client::{backoff::BackoffConfig, retry::RetryConfig, ClientOptions};
 
-/// A specialized `Result` for object store-related errors
+/// A specialized `Result` for mlflow-client related errors
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(thiserror::Error, Debug)]
@@ -26,6 +39,93 @@ pub enum Error {
 
     #[error("service did not respond: {0}")]
     Retry(#[from] crate::client::retry::Error),
+
+    #[error("Error serializaing request/response data: {0}")]
+    Serialization(#[from] serde_json::Error),
+
+    #[error("Missing required configuration: {0}")]
+    MissingConfig(String),
+
+    #[error("MError during service request: {0}")]
+    RequestError(#[from] reqwest::Error),
+}
+
+#[derive(Default)]
+pub struct MlFlowClientBuilder {
+    host: Option<String>,
+    retry_config: RetryConfig,
+    client_options: ClientOptions,
+}
+
+impl MlFlowClientBuilder {
+    /// Create a new [`MlFlowClientBuilder`] with default values.
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Load values confgured in teh environment
+    ///
+    /// - `MLFLOW_TRACKING_URI`: URI for mlflow tracking server
+    pub fn from_env() -> Self {
+        let mut builder = Self::default();
+
+        if let Ok(host) = std::env::var("MLFLOW_TRACKING_URI") {
+            builder.host = Some(host);
+        }
+
+        builder
+    }
+
+    /// Set the retry configuration
+    pub fn with_service_url(mut self, service_url: impl Into<String>) -> Self {
+        self.host = Some(service_url.into());
+        self
+    }
+
+    /// Sets what protocol is allowed. If `allow_http` is :
+    /// * false (default):  Only HTTPS are allowed
+    /// * true:  HTTP and HTTPS are allowed
+    pub fn with_allow_http(mut self, allow_http: bool) -> Self {
+        self.client_options = self.client_options.with_allow_http(allow_http);
+        self
+    }
+
+    /// Set the retry configuration
+    pub fn with_retry(mut self, retry_config: RetryConfig) -> Self {
+        self.retry_config = retry_config;
+        self
+    }
+
+    /// Set the proxy_url to be used by the underlying client
+    pub fn with_proxy_url(mut self, proxy_url: impl Into<String>) -> Self {
+        self.client_options = self.client_options.with_proxy_url(proxy_url);
+        self
+    }
+
+    /// Sets the client options, overriding any already set
+    pub fn with_client_options(mut self, options: ClientOptions) -> Self {
+        self.client_options = options;
+        self
+    }
+
+    pub fn build(self) -> Result<MlflowClient> {
+        let Self {
+            retry_config,
+            host,
+            client_options,
+        } = self;
+
+        let host = host.ok_or(Error::MissingConfig("host".into()))?;
+        let host_url = Url::parse(&host)?;
+
+        let config = MlflowConfig {
+            retry_config,
+            service: host_url,
+            client_options,
+        };
+
+        Ok(MlflowClient::try_new(config)?)
+    }
 }
 
 /// Configuration for [`MlflowClient`]
@@ -50,29 +150,104 @@ impl MlflowClient {
         Ok(Self { config, client })
     }
 
-    async fn post_request<T: Serialize + std::fmt::Debug + ?Sized + Sync>(
+    async fn request<T: Serialize + std::fmt::Debug + ?Sized + Sync>(
         &self,
+        method: Method,
         path: impl AsRef<str>,
-        bytes: Option<Bytes>,
-        query: &T,
+        body: &T,
     ) -> Result<Response> {
-        let url = self.config.service.join(path.as_ref())?;
-
-        let mut builder = self.client.request(Method::POST, url).query(query);
-
-        if let Some(bytes) = bytes {
-            builder = builder
-                .header(CONTENT_LENGTH, HeaderValue::from(bytes.len()))
-                .body(bytes)
-        } else {
-            builder = builder.header(CONTENT_LENGTH, HeaderValue::from_static("0"));
-        }
-
-        let response = builder
+        let url = self
+            .config
+            .service
+            .join("api/2.0/mlflow/")?
+            .join(path.as_ref())?;
+        let bytes = Bytes::from(serde_json::to_vec(body)?);
+        let builder = self
+            .client
+            .request(method, url)
+            .header(CONTENT_LENGTH, HeaderValue::from(bytes.len()))
+            .body(bytes);
+        Ok(builder
             // .with_azure_authorization(&credential, &self.config.account)
             .send_retry(&self.config.retry_config)
-            .await?;
+            .await?)
+    }
 
-        Ok(response)
+    pub async fn create_registered_model(
+        &self,
+        name: impl Into<String>,
+        description: Option<impl Into<String>>,
+        tags: Option<HashMap<String, String>>,
+    ) -> Result<CreateRegisteredModelResponse> {
+        let payload = CreateRegisteredModel {
+            name: Some(name.into()),
+            description: description.map(|d| d.into()),
+            tags: tags
+                .map(|t| {
+                    t.iter()
+                        .map(|(key, value)| RegisteredModelTag {
+                            key: Some(key.clone()),
+                            value: Some(value.clone()),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+        };
+        let response = self
+            .request(Method::POST, "registered-models/create", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn get_registered_model(
+        &self,
+        name: impl Into<String>,
+    ) -> Result<GetRegisteredModelResponse> {
+        let payload = GetRegisteredModel {
+            name: Some(name.into()),
+        };
+        let response = self
+            .request(Method::GET, "registered-models/get", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn rename_registered_model(
+        &self,
+        name: impl Into<String>,
+        new_name: impl Into<String>,
+    ) -> Result<RenameRegisteredModelResponse> {
+        let payload = RenameRegisteredModel {
+            name: Some(name.into()),
+            new_name: Some(new_name.into()),
+        };
+        let response = self
+            .request(Method::POST, "registered-models/rename", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn update_registered_model(
+        &self,
+        name: impl Into<String>,
+        description: Option<impl Into<String>>,
+    ) -> Result<UpdateRegisteredModelResponse> {
+        let payload = UpdateRegisteredModel {
+            name: Some(name.into()),
+            description: description.map(|d| d.into()),
+        };
+        let response = self
+            .request(Method::PATCH, "registered-models/rename", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn delete_registered_model(&self, name: impl Into<String>) -> Result<()> {
+        let payload = DeleteRegisteredModel {
+            name: Some(name.into()),
+        };
+        self.request(Method::DELETE, "registered-models/delete", &payload)
+            .await?;
+        Ok(())
     }
 }

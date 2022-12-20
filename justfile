@@ -19,7 +19,10 @@ _run-server:
     RUST_LOG="debug" cargo run -p inference-server
 
 _run-mlflow:
-    poetry run mlflow server --host "0.0.0.0"
+    mkdir --parents .mlflow
+    poetry run mlflow ui --host "127.0.0.1" --port 5000 \
+        --backend-store-uri "sqlite:///.mlflow/mlruns.sqlite" \
+        --default-artifact-root "file://{{ justfile_directory() }}/.mlflow/mlruns"
 
 run command:
     just _run-{{ command }}

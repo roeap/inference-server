@@ -53,6 +53,5 @@ pub struct FileInfo {
     #[prost(int64, optional, tag="3")]
     pub file_size: ::core::option::Option<i64>,
 }
-include!("mlflow.artifacts.tonic.rs");
 include!("mlflow.artifacts.serde.rs");
 // @@protoc_insertion_point(module)
