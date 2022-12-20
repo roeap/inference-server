@@ -4,8 +4,13 @@
 
 replicaCount: 1
 
-image:
-  repository: nginx
+imageEnvoy:
+  repository: bitnami/envoy
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imageMlflow:
+  repository: mlflow
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -84,3 +89,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+####################################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+####################################################################################################
+extraManifests: []

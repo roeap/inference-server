@@ -37,3 +37,5 @@ deploy:
         setValueTemplates:
           image.repository: "{{ .IMAGE_REPO_inference_server }}"
           image.tag: "{{ .IMAGE_TAG_inference_server }}"
+          imageMlflow.repository: "{{ .IMAGE_REPO_mlflow }}"
+          imageMlflow.tag: "{{ .IMAGE_TAG_mlflow }}"
