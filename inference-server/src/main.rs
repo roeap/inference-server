@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdout_log = tracing_subscriber::fmt::layer().pretty();
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(format!(
-            "{},h2=off,sqlparser=off,datafusion_optimizer=off,datafusion::physical_plan::planner=off",
+            "{},h2=off",
             "debug"
         )))
         .with(stdout_log)

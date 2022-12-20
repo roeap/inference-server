@@ -29,6 +29,8 @@ repos:
     rev: v3.0.0-alpha.4
     hooks:
       - id: prettier
+        exclude_types:
+          - yaml
 
   # - repo: https://github.com/asottile/pyupgrade
   #   rev: v3.3.1

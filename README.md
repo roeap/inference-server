@@ -6,9 +6,10 @@ Playground for an experimental inference server based on [V2 inference protocol]
 
 ### Prerequisites
 
-- Poetry `>= 1.3`
-- just
-- rust toolchain
+- [Poetry](https://python-poetry.org/) `>= 1.3`
+- [just](https://just.systems/)
+- [rust toolchain](https://www.rust-lang.org/tools/install)
+- [skaffold](https://skaffold.dev)
 
 ```sh
 just install

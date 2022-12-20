@@ -29,3 +29,9 @@ run command:
 
 docker tag:
     docker build -t inference-server:{{ tag }} .
+
+render:
+    skaffold render -o skaffold-manifests.yaml --digest-source=local
+
+build:
+    skaffold build

@@ -1,0 +1,32 @@
+apiVersion: skaffold/v3
+kind: Config
+metadata:
+  name: inference-server
+build:
+  artifacts:
+    - image: inference-server
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        noCache: false
+        pullParent: false
+        squash: false
+  local:
+    concurrency: 1
+    tryImportMissing: false
+    useDockerCLI: false
+    push: false
+deploy:
+  helm:
+    releases:
+      - name: inference-server
+        chartPath: helm/inference-server
+        valuesFiles:
+          - ./config/local-values.yaml
+        recreatePods: false
+        skipBuildDependencies: false
+        useHelmSecrets: false
+        wait: false
+        setValueTemplates:
+          image.repository: "{{ .IMAGE_REPO_inference_server }}"
+          image.tag: "{{ .IMAGE_TAG_inference_server }}"
