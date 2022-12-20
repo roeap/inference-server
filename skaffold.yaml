@@ -7,7 +7,14 @@ build:
     - image: inference-server
       context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: docker/inference.Dockerfile
+        noCache: false
+        pullParent: false
+        squash: false
+    - image: mlflow
+      context: docker/
+      docker:
+        dockerfile: mlflow.Dockerfile
         noCache: false
         pullParent: false
         squash: false
