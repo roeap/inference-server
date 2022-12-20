@@ -26,3 +26,6 @@ _run-mlflow:
 
 run command:
     just _run-{{ command }}
+
+docker tag:
+    docker build -t inference-server:{{ tag }} .

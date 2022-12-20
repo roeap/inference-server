@@ -8,19 +8,25 @@ use std::collections::HashMap;
 use crate::client::retry::RetryExt;
 pub use crate::gen::create_experiment::Response as CreateExperimentResponse;
 pub use crate::gen::create_registered_model::Response as CreateRegisteredModelResponse;
+pub use crate::gen::create_run::Response as CreateRunResponse;
 pub use crate::gen::delete_experiment::Response as DeleteExperimentResponse;
+pub use crate::gen::delete_run::Response as DeleteRunResponse;
 pub use crate::gen::get_experiment::Response as GetExperimentResponse;
 pub use crate::gen::get_experiment_by_name::Response as GetExperimentByNameResponse;
 pub use crate::gen::get_registered_model::Response as GetRegisteredModelResponse;
 pub use crate::gen::rename_registered_model::Response as RenameRegisteredModelResponse;
 pub use crate::gen::restore_experiment::Response as RestoreExperimentResponse;
+pub use crate::gen::restore_run::Response as RestoreRunResponse;
 pub use crate::gen::search_experiments::Response as SearchExperimentsResponse;
 pub use crate::gen::update_experiment::Response as UpdateExperimentResponse;
 pub use crate::gen::update_registered_model::Response as UpdateRegisteredModelResponse;
+pub use crate::gen::GetRun as GetRunResponse;
+pub use crate::gen::ViewType;
 pub use crate::gen::{
-    CreateExperiment, CreateRegisteredModel, DeleteExperiment, DeleteRegisteredModel,
-    ExperimentTag, GetExperiment, GetExperimentByName, GetRegisteredModel, RegisteredModelTag,
-    RenameRegisteredModel, RestoreExperiment, SearchExperiments, UpdateRegisteredModel,
+    CreateExperiment, CreateRegisteredModel, CreateRun, DeleteExperiment, DeleteRegisteredModel,
+    DeleteRun, ExperimentTag, GetExperiment, GetExperimentByName, GetRegisteredModel, GetRun,
+    RegisteredModelTag, RenameRegisteredModel, RestoreExperiment, RestoreRun, RunTag,
+    SearchExperiments, UpdateRegisteredModel,
 };
 use bytes::Bytes;
 use gen::UpdateExperiment;
@@ -207,6 +213,31 @@ impl MlflowClient {
         Ok(serde_json::from_slice(&response.bytes().await?)?)
     }
 
+    pub async fn search_experiments(
+        &self,
+        max_results: Option<i64>,
+        page_token: Option<impl Into<String>>,
+        filter: Option<impl Into<String>>,
+        order_by: Option<Vec<impl Into<String>>>,
+        view_type: Option<ViewType>,
+    ) -> Result<SearchExperimentsResponse> {
+        let payload = SearchExperiments {
+            max_results: max_results,
+            page_token: page_token.map(|t| t.into()),
+            filter: filter.map(|t| t.into()),
+            order_by: order_by
+                .unwrap_or_default()
+                .into_iter()
+                .map(|o| o.into())
+                .collect(),
+            view_type: view_type.map(|vt| vt.into()),
+        };
+        let response = self
+            .request(Method::POST, "experiments/search", &payload)
+            .await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
     pub async fn get_experiment(
         &self,
         experiment_id: impl Into<String>,
@@ -264,6 +295,59 @@ impl MlflowClient {
         self.request(Method::POST, "experiments/update", &payload)
             .await?;
         Ok(())
+    }
+
+    pub async fn create_run(
+        &self,
+        experiment_id: impl Into<String>,
+        run_name: Option<impl Into<String>>,
+        start_time: Option<i64>,
+        tags: Option<HashMap<String, String>>,
+    ) -> Result<CreateRunResponse> {
+        let payload = CreateRun {
+            experiment_id: Some(experiment_id.into()),
+            start_time,
+            run_name: run_name.map(|d| d.into()),
+            tags: tags
+                .map(|t| {
+                    t.iter()
+                        .map(|(key, value)| RunTag {
+                            key: Some(key.clone()),
+                            value: Some(value.clone()),
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
+            // NOTE user_id is a deprecated field, so we give no option to pass it.
+            user_id: None,
+        };
+        let response = self.request(Method::POST, "runs/create", &payload).await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
+    }
+
+    pub async fn delete_run(&self, run_id: impl Into<String>) -> Result<()> {
+        let payload = DeleteRun {
+            run_id: Some(run_id.into()),
+        };
+        self.request(Method::POST, "runs/delete", &payload).await?;
+        Ok(())
+    }
+
+    pub async fn restore_run(&self, run_id: impl Into<String>) -> Result<()> {
+        let payload = RestoreRun {
+            run_id: Some(run_id.into()),
+        };
+        self.request(Method::POST, "runs/restore", &payload).await?;
+        Ok(())
+    }
+
+    pub async fn get_run(&self, run_id: impl Into<String>) -> Result<GetRunResponse> {
+        let payload = GetRun {
+            run_id: Some(run_id.into()),
+            run_uuid: None,
+        };
+        let response = self.request(Method::GET, "runs/get", &payload).await?;
+        Ok(serde_json::from_slice(&response.bytes().await?)?)
     }
 
     pub async fn create_registered_model(
