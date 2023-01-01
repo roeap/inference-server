@@ -35,3 +35,12 @@ render:
 
 build:
     skaffold build
+
+_cluster-start:
+    minikube start
+
+_cluster-stop:
+    minikube stop
+
+cluster command:
+    just _cluster-{{ command }}
