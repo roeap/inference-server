@@ -28,7 +28,7 @@ torch = "^1.13.1"
 
 [tool.poetry.group.dev.dependencies]
 black = { extras = ["jupyter"], version = "^22.12.0" }
-ruff = "^0.0.183"
+ruff = "^0.0.192"
 ipykernel = "^6.19.2"
 pre-commit = "^2.20.0"
 

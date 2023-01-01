@@ -35,9 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(stdout_log)
         .try_init()?;
 
-    let store = Arc::new(LocalFileSystem::new_with_prefix(
-        "inference-server/tests/data",
-    )?);
+    let store = Arc::new(LocalFileSystem::new_with_prefix("/opt/app/")?);
+    // let store = Arc::new(LocalFileSystem::new());
     let repository = StorageRepository::try_new(store).await?;
     let mut repositories: HashMap<String, Arc<dyn RepositoryHandler>> = HashMap::new();
     repositories.insert("default".to_string(), Arc::new(repository));

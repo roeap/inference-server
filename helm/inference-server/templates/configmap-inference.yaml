@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "inference-server.fullname" . }}-inference
+  labels:
+    app: {{ template "inference-server.name" . }}
+    chart: {{ template "inference-server.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  repo.yaml: |
+    {{- .Files.Get "files/repo.yaml" | nindent 4 }}

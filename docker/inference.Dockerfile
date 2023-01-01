@@ -12,6 +12,6 @@ RUN cargo build --package inference-server --release --locked
 FROM gcr.io/distroless/cc
 COPY --from=build-env /app/target/release/inference-server /opt/app/
 
-WORKDIR /app
+WORKDIR /opt/app/
 
 CMD ["./inference-server"]

@@ -29,8 +29,8 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: envoy
-          image: "{{ .Values.imageEnvoy.repository }}:{{ .Values.imageEnvoy.tag }}"
-          imagePullPolicy: {{ .Values.imageEnvoy.pullPolicy }}
+          image: "{{ .Values.envoy.image.repository }}:{{ .Values.envoy.image.tag }}"
+          imagePullPolicy: {{ .Values.envoy.image.pullPolicy }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -41,12 +41,28 @@ spec:
               subPath: envoy.yaml
               readOnly: true
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.envoy.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.envoy.securityContext | nindent 12 }}
+        - name: inference
+          image: "{{ .Values.inference.image.repository }}:{{ .Values.inference.image.tag }}"
+          imagePullPolicy: {{ .Values.inference.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+          volumeMounts:
+            - name: inference-config
+              mountPath: /opt/app/repo.yaml
+              subPath: repo.yaml
+              readOnly: true
+          resources:
+            {{- toYaml .Values.inference.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.inference.securityContext | nindent 12 }}
         - name: mlflow
-          image: "{{ .Values.imageMlflow.repository }}:{{ .Values.imageMlflow.tag }}"
-          imagePullPolicy: {{ .Values.imageMlflow.pullPolicy }}
+          image: "{{ .Values.mlflow.image.repository }}:{{ .Values.mlflow.image.tag }}"
+          imagePullPolicy: {{ .Values.mlflow.image.pullPolicy }}
           command: ["mlflow"]
           args:
             - server
@@ -65,13 +81,16 @@ spec:
               path: /health
               port: 5000
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.mlflow.resources | nindent 12 }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.mlflow.securityContext | nindent 12 }}
       volumes:
         - name: envoy-config
           configMap:
             name: {{ template "inference-server.fullname" . }}-envoy
+        - name: inference-config
+          configMap:
+            name: {{ template "inference-server.fullname" . }}-inference
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -44,3 +44,9 @@ _cluster-stop:
 
 cluster command:
     just _cluster-{{ command }}
+
+start:
+    skaffold run
+
+stop:
+    skaffold delete
