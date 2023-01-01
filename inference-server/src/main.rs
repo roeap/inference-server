@@ -17,7 +17,7 @@ mod service;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::repositories::{RepositoryHandler, StorageRepository};
-use crate::service::ModelService;
+use crate::service::{InferenceServiceServer, ModelRepositoryServiceServer, ModelService};
 
 use object_store::local::LocalFileSystem;
 use tonic::transport::Server;
@@ -29,11 +29,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdout_log = tracing_subscriber::fmt::layer().pretty();
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(format!(
-            "{},h2=off",
+            "{},h2=off,hyper=warn",
             "debug"
         )))
         .with(stdout_log)
         .try_init()?;
+
+    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    health_reporter
+        .set_serving::<InferenceServiceServer<ModelService>>()
+        .await;
+    health_reporter
+        .set_serving::<ModelRepositoryServiceServer<ModelService>>()
+        .await;
 
     let store = Arc::new(LocalFileSystem::new_with_prefix("/opt/app/")?);
     // let store = Arc::new(LocalFileSystem::new());
@@ -47,6 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Listening on 0.0.0.0:50051");
 
     Server::builder()
+        .add_service(health_service)
         .add_service(infer_svc)
         .add_service(repo_svc)
         .serve("0.0.0.0:50051".parse()?)

@@ -9,8 +9,8 @@ use crate::models::InferenceHandler;
 use crate::repositories::RepositoryHandler;
 
 use dashmap::DashMap;
-use inference_protocol::inference_service_server::InferenceServiceServer;
-use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
+pub use inference_protocol::inference_service_server::InferenceServiceServer;
+pub use inference_protocol::model_repository_service_server::ModelRepositoryServiceServer;
 
 const DEFAULT_REPOSITORY_NAME: &str = "default";
 

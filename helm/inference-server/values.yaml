@@ -9,6 +9,7 @@ inference:
     repository: inference-server
     tag: latest
     pullPolicy: IfNotPresent
+  containerPort: 50051
   resources:
     {}
     # limits:
@@ -53,6 +54,7 @@ mlflow:
     repository: mlflow
     tag: latest
     pullPolicy: IfNotPresent
+  containerPort: 5000
   resources:
     {}
     # limits:
@@ -95,7 +97,7 @@ service:
 
 ingress:
   enabled: false
-  className: ""
+  className: nginx
   annotations:
     {}
     # kubernetes.io/ingress.class: nginx
